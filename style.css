@@ -413,3 +413,60 @@ html.ios-gap dialog { padding-bottom: 14px; }
   .tiles.three .tile-t { font-size: 14px; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* ---------- Notes (façon Notes d'Apple) ---------- */
+.tiles .tile-notes svg { background: #ffcc00; }
+dialog.full {
+  height: calc(var(--app-h, 100vh) - 44px);
+  max-height: none;
+  padding: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+@media (min-width: 601px) { dialog.full { height: min(720px, calc(100vh - 60px)); } }
+.notes-view { display: flex; flex-direction: column; height: 100%; }
+.notes-head { padding: 22px 18px 6px; }
+.notes-title { margin: 0; }
+.notes-list {
+  list-style: none; margin: 8px 16px 0; padding: 0; overflow-y: auto; flex: 1;
+  background: var(--card); border-radius: 18px; align-self: stretch;
+}
+.notes-list:empty { background: none; }
+.notes-list li { padding: 12px 16px; border-top: 0.5px solid var(--border); cursor: pointer; transition: background .15s; }
+.notes-list li:first-child { border-top: none; }
+.notes-list li:active { background: var(--field); }
+.notes-list .nt { font-weight: 600; font-size: 17px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.notes-list .np { font-size: 15px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.notes-list .np b { color: var(--text); font-weight: 400; margin-right: 6px; }
+.notes-empty { margin-top: 30vh; }
+.notes-foot {
+  display: flex; align-items: center; justify-content: center; position: relative;
+  padding: 12px 18px calc(env(safe-area-inset-bottom) + 12px);
+}
+html.ios-gap .notes-foot { padding-bottom: 14px; }
+.compose {
+  position: absolute; right: 16px;
+  width: 50px; height: 50px; border-radius: 50%; border: none;
+  background: rgba(255, 255, 255, 0.8);
+  -webkit-backdrop-filter: blur(20px); backdrop-filter: blur(20px);
+  box-shadow: 0 6px 20px rgba(0,0,0,.12), 0 0 0 0.5px rgba(0,0,0,.06);
+  color: #e0a800; display: flex; align-items: center; justify-content: center; cursor: pointer;
+  transition: transform .12s;
+}
+.compose:active { transform: scale(0.92); }
+.compose svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.notes-edit-head { padding: 22px 14px 4px; }
+.back-link { font-size: 17px; color: #e0a800; }
+#note-done { color: #e0a800; font-size: 17px; font-weight: 600; }
+#note-delete { color: #e0a800; background: none; }
+#note-date { margin: 4px 0; }
+#note-body {
+  flex: 1; width: 100%; border: none; resize: none; outline: none;
+  background: var(--card); margin: 0; padding: 16px 18px calc(env(safe-area-inset-bottom) + 18px);
+  font: inherit; font-size: 17px; line-height: 1.45; color: var(--text);
+  border-radius: 22px 22px 0 0; -webkit-user-select: text; user-select: text;
+}
+#note-body::first-line { font-weight: 700; font-size: 22px; }
+.tiles .tile.tile-notes svg { background: #ffcc00; }
+.notes-list { flex: 0 1 auto; }
+.notes-foot { margin-top: auto; }

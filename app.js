@@ -123,6 +123,7 @@ async function loadAll() {
   state.weekRef = mondayOf(new Date());
   renderWeek();
   loadPause();
+  loadNotes();
 }
 
 function renderBalance() {
@@ -606,7 +607,7 @@ window.addEventListener('resize', fixHeight);
 window.addEventListener('orientationchange', () => setTimeout(fixHeight, 300));
 
 // Ligne de diagnostic (en bas des réglages) pour régler l'affichage selon le téléphone
-const APP_VERSION = 'v16';
+const APP_VERSION = 'v17';
 function diag() {
   const probe = document.createElement('div');
   probe.style.cssText = 'position:fixed;visibility:hidden;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)';
@@ -857,3 +858,118 @@ $('pause-cancel').addEventListener('click', async () => {
 });
 
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && state.user) loadPause(); });
+
+// ---------- Notes (façon Notes d'Apple) ----------
+let notes = [];          // { id, body, updated_at }
+let noteCur = null;      // note ouverte (null = nouvelle pas encore enregistrée)
+let noteTimer = 0;
+let noteSaving = Promise.resolve();
+
+function noteTitle(body) {
+  const lines = body.split('\n').map((l) => l.trim()).filter(Boolean);
+  return { title: lines[0] || 'Nouvelle note', rest: lines.slice(1).join(' ') };
+}
+function noteWhen(iso) {
+  const d = new Date(iso), now = new Date();
+  if (isoDate(d) === isoDate(now)) return `${d.getHours()}:${String(d.getMinutes()).padStart(2, '0')}`;
+  const y = new Date(now); y.setDate(now.getDate() - 1);
+  if (isoDate(d) === isoDate(y)) return 'Hier';
+  return `${String(d.getDate()).padStart(2, '0')}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getFullYear()).slice(2)}`;
+}
+
+async function loadNotes() {
+  const { data, error } = await sb.from('notes').select('id,body,updated_at').order('updated_at', { ascending: false });
+  if (!error) notes = data || [];
+  renderNotes();
+}
+
+function renderNotes() {
+  const n = notes.length;
+  $('notes-count').textContent = n ? `${n} note${n > 1 ? 's' : ''}` : 'Prendre une note';
+  $('notes-foot-count').textContent = n ? `${n} note${n > 1 ? 's' : ''}` : '';
+  const ul = $('notes-list');
+  ul.innerHTML = '';
+  for (const x of notes) {
+    const { title, rest } = noteTitle(x.body);
+    const li = document.createElement('li');
+    const t = document.createElement('div'); t.className = 'nt'; t.textContent = title;
+    const p = document.createElement('div'); p.className = 'np';
+    const b = document.createElement('b'); b.textContent = noteWhen(x.updated_at);
+    p.append(b, document.createTextNode(rest || 'Aucun texte supplémentaire'));
+    li.append(t, p);
+    li.addEventListener('click', () => openNote(x));
+    ul.appendChild(li);
+  }
+  $('notes-empty').hidden = n > 0;
+}
+
+function showNotesList() {
+  $('notes-edit-view').hidden = true;
+  $('notes-list-view').hidden = false;
+  renderNotes();
+}
+
+function openNote(x) {
+  noteCur = x;
+  $('notes-list-view').hidden = true;
+  $('notes-edit-view').hidden = false;
+  $('note-body').value = x ? x.body : '';
+  $('note-date').textContent = x ? new Date(x.updated_at).toLocaleString('fr-FR', { day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit' }) : '';
+  $('note-delete').hidden = !x;
+  if (!x) setTimeout(() => $('note-body').focus(), 50);
+}
+
+async function saveNote() {
+  clearTimeout(noteTimer);
+  const body = $('note-body').value;
+  noteSaving = noteSaving.then(async () => {
+    if (!noteCur) {
+      if (!body.trim()) return;
+      const { data, error } = await sb.from('notes').insert({ user_id: state.user.id, body }).select('id,body,updated_at').single();
+      if (error) { toast(frError(error)); return; }
+      noteCur = data;
+      notes.unshift(data);
+      $('note-delete').hidden = false;
+    } else if (body !== noteCur.body) {
+      const { data, error } = await sb.from('notes').update({ body }).eq('id', noteCur.id).select('id,body,updated_at').single();
+      if (error) { toast(frError(error)); return; }
+      Object.assign(noteCur, data);
+      notes = [noteCur, ...notes.filter((n) => n.id !== noteCur.id)];
+    }
+  });
+  return noteSaving;
+}
+
+async function closeNote() {
+  await saveNote();
+  // une note vidée est supprimée, comme sur l'iPhone
+  if (noteCur && !$('note-body').value.trim()) {
+    await sb.from('notes').delete().eq('id', noteCur.id);
+    notes = notes.filter((n) => n.id !== noteCur.id);
+  }
+  noteCur = null;
+  $('note-body').blur();
+}
+
+$('note-body').addEventListener('input', () => {
+  clearTimeout(noteTimer);
+  noteTimer = setTimeout(saveNote, 700);
+});
+$('notes-open').addEventListener('click', () => { showNotesList(); $('notes-dialog').showModal(); });
+$('notes-close').addEventListener('click', () => $('notes-dialog').close());
+$('note-new').addEventListener('click', () => openNote(null));
+$('note-back').addEventListener('click', async () => { await closeNote(); showNotesList(); });
+$('note-done').addEventListener('click', async () => { await closeNote(); showNotesList(); });
+$('note-delete').addEventListener('click', async () => {
+  if (!noteCur || !confirm('Supprimer cette note ?')) return;
+  clearTimeout(noteTimer);
+  await noteSaving;
+  await sb.from('notes').delete().eq('id', noteCur.id);
+  notes = notes.filter((n) => n.id !== noteCur.id);
+  noteCur = null;
+  toast('Note supprimée');
+  showNotesList();
+});
+// Fermer la feuille (geste ou Échap) enregistre la note en cours
+$('notes-dialog').addEventListener('close', () => { if (!$('notes-edit-view').hidden) closeNote().then(renderNotes); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && !$('notes-edit-view').hidden) saveNote(); });
