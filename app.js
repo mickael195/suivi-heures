@@ -152,7 +152,7 @@ function resetForm(jour) {
   $('f-date').value = jour;
   const ex = entryFor(jour);
   $('form-title').textContent = ex ? 'Modifier la journée' : (jour === isoDate(new Date()) ? 'Ma journée' : 'Ajouter une journée');
-  $('f-prevu').value = fmt(ex ? ex.prevu_min : defaultPrevu(jour));
+  $('f-prevu').value = ex ? fmt(ex.prevu_min) : ''; // saisie à la main, pas de remplissage auto
   $('f-travail').value = ex ? toDecimal(ex.travail_min) : '';
   $('delete-btn').hidden = !ex;
   $('save-btn').textContent = ex ? 'Mettre à jour' : 'Enregistrer';
@@ -605,7 +605,7 @@ window.addEventListener('resize', fixHeight);
 window.addEventListener('orientationchange', () => setTimeout(fixHeight, 300));
 
 // Ligne de diagnostic (en bas des réglages) pour régler l'affichage selon le téléphone
-const APP_VERSION = 'v12';
+const APP_VERSION = 'v13';
 function diag() {
   const probe = document.createElement('div');
   probe.style.cssText = 'position:fixed;visibility:hidden;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)';
