@@ -314,6 +314,3 @@ button { touch-action: manipulation; }
 /* Exemples dans les cases : bien plus pâles pour ne pas les confondre avec une vraie valeur */
 input::placeholder { color: var(--muted); opacity: .45; }
 #app-view { height: var(--app-h, 100lvh); }
-html.ios-gap, html.ios-gap body { background: var(--card); }
-html.ios-gap .pager { background: var(--bg); }
-html.ios-gap .tabbar { padding-bottom: 4px; }

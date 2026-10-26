@@ -573,17 +573,9 @@ $('k-add-btn').addEventListener('click', addK);
 $('k-add').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addK(); } });
 $('k-clear').addEventListener('click', () => { kItems = []; renderK(); });
 
-// iPhone (app installée) : sur certaines versions d'iOS, la zone de l'app s'arrête
-// avant le bas de l'écran (bug d'iOS). On ne peut pas dessiner dedans avec la barre,
-// alors on la colore comme la barre d'onglets pour qu'elle fasse corps avec elle.
+// Hauteur de l'app = zone visible réelle
 function fixHeight() {
-  const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
-  const portrait = window.matchMedia('(orientation: portrait)').matches;
-  const h = window.innerHeight;
-  document.documentElement.style.setProperty('--app-h', h + 'px');
-  const full = portrait ? screen.height : screen.width;
-  const gap = standalone && /iphone|ipod/i.test(navigator.userAgent) && full - h > 20;
-  document.documentElement.classList.toggle('ios-gap', gap);
+  document.documentElement.style.setProperty('--app-h', window.innerHeight + 'px');
 }
 fixHeight();
 window.addEventListener('resize', fixHeight);
