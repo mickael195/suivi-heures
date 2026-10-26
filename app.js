@@ -1,5 +1,6 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 import { parseDuree, fmt, fmtSigned, isoDate, parseIso, periodBounds, shiftRef, summarize } from './time.js';
+import { dayPlan, weekPlan, mondayOf, plagesTotal, cent as centMin, hhmm, toMin } from './planning.js';
 
 const SUPABASE_URL = 'https://ogpidhrvlgkcyyaryjny.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_23qQ5heU8A9CF4me4VQ_8Q_le0fzV7H';
@@ -119,6 +120,8 @@ async function loadAll() {
   renderBalance();
   resetForm(isoDate(new Date()));
   renderHistory();
+  state.weekRef = mondayOf(new Date());
+  renderWeek();
 }
 
 function renderBalance() {
@@ -134,8 +137,10 @@ function renderBalance() {
 // ---------- Formulaire ----------
 function entryFor(jour) { return state.entries.find((x) => x.jour === jour); }
 
-function defaultPrevu() {
-  // dernière valeur saisie, sinon réglage par défaut
+function defaultPrevu(jour) {
+  // d'abord le planning (rotation R1/R2/R3), sinon dernière valeur saisie, sinon réglage
+  const p = jour && state.profile?.planning ? dayPlan(state.profile.planning, parseIso(jour)) : null;
+  if (p) return p.total;
   return state.entries[0]?.prevu_min ?? state.profile.prevu_defaut_min ?? 420;
 }
 
@@ -147,7 +152,7 @@ function resetForm(jour) {
   $('f-date').value = jour;
   const ex = entryFor(jour);
   $('form-title').textContent = ex ? 'Modifier la journée' : (jour === isoDate(new Date()) ? 'Ma journée' : 'Ajouter une journée');
-  $('f-prevu').value = fmt(ex ? ex.prevu_min : defaultPrevu());
+  $('f-prevu').value = fmt(ex ? ex.prevu_min : defaultPrevu(jour));
   $('f-travail').value = ex ? toDecimal(ex.travail_min) : '';
   $('delete-btn').hidden = !ex;
   $('save-btn').textContent = ex ? 'Mettre à jour' : 'Enregistrer';
@@ -600,7 +605,7 @@ window.addEventListener('resize', fixHeight);
 window.addEventListener('orientationchange', () => setTimeout(fixHeight, 300));
 
 // Ligne de diagnostic (en bas des réglages) pour régler l'affichage selon le téléphone
-const APP_VERSION = 'v11';
+const APP_VERSION = 'v12';
 function diag() {
   const probe = document.createElement('div');
   probe.style.cssText = 'position:fixed;visibility:hidden;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)';
@@ -612,3 +617,128 @@ function diag() {
   const vv = window.visualViewport ? Math.round(visualViewport.height) + '/' + Math.round(visualViewport.offsetTop) : '-';
   return `${APP_VERSION} · ${sa} · écran ${screen.height} · vue ${innerHeight} · vv ${vv} · haut ${st} · bas ${sb} · app ${$('app-view').getBoundingClientRect().height | 0}${document.documentElement.classList.contains('ios-gap') ? ' · correctif iOS' : ''}`;
 }
+
+// ---------- Planning de la semaine (accueil) ----------
+const JOURS_COURTS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+state.weekRef = mondayOf(new Date());
+
+function plagesTexte(pl) {
+  return pl.map(([a, b]) => `${hhmm(toMin(a))}–${hhmm(toMin(b))}`).join(' · ');
+}
+
+function renderWeek() {
+  const planning = state.profile?.planning;
+  const ul = $('wk-days');
+  ul.innerHTML = '';
+  const todayIso = isoDate(new Date());
+  const thisMonday = mondayOf(new Date());
+  const diffW = Math.round((state.weekRef - thisMonday) / (7 * 86400000));
+  $('wk-title').textContent = diffW === 0 ? 'Cette semaine' : diffW === 1 ? 'Semaine prochaine' : diffW === -1 ? 'Semaine dernière'
+    : `Semaine du ${state.weekRef.getDate()}/${state.weekRef.getMonth() + 1}`;
+  updateTodayTile();
+  if (!planning) { $('wk-sub').textContent = ''; $('wk-empty').hidden = false; return; }
+  $('wk-empty').hidden = true;
+  const days = weekPlan(planning, state.weekRef);
+  const total = days.reduce((t, d) => t + d.total, 0);
+  $('wk-sub').textContent = `${days[0].rot} · ${days[0].nom} · ${centMin(total)}`;
+  days.forEach((d, i) => {
+    if (i === 6 && !d.plages) return; // dimanche affiché seulement s'il est travaillé
+    const li = document.createElement('li');
+    li.className = (d.iso === todayIso ? 'today ' : '') + (d.plages ? '' : 'off') + (d.iso < todayIso ? ' past' : '');
+    const c1 = document.createElement('div');
+    c1.className = 'wd';
+    c1.innerHTML = '<span class="wd-n"></span><span class="wd-d"></span>';
+    c1.querySelector('.wd-n').textContent = JOURS_COURTS[i];
+    c1.querySelector('.wd-d').textContent = d.date.getDate();
+    const c2 = document.createElement('div');
+    c2.className = 'wh';
+    c2.textContent = d.plages ? plagesTexte(d.plages) : 'Repos';
+    if (d.exception) {
+      const m = document.createElement('span');
+      m.className = 'wx';
+      m.textContent = 'modifié';
+      c2.appendChild(m);
+    }
+    const c3 = document.createElement('div');
+    c3.className = 'wt';
+    c3.textContent = d.plages ? centMin(d.total) : '';
+    li.append(c1, c2, c3);
+    li.addEventListener('click', () => openDay(d));
+    ul.appendChild(li);
+  });
+}
+
+function updateTodayTile() {
+  const p = state.profile?.planning ? dayPlan(state.profile.planning, new Date()) : null;
+  $('tile-today').textContent = !p ? "Aujourd'hui" : p.plages ? `Prévu ${centMin(p.total)}` : "Repos aujourd'hui";
+}
+
+$('wk-prev').addEventListener('click', () => { state.weekRef.setDate(state.weekRef.getDate() - 7); state.weekRef = new Date(state.weekRef); renderWeek(); });
+$('wk-next').addEventListener('click', () => { state.weekRef.setDate(state.weekRef.getDate() + 7); state.weekRef = new Date(state.weekRef); renderWeek(); });
+
+// ----- Modifier un jour (repos ↔ travail, horaires) -----
+let ddDay = null;
+let ddWork = true;
+function setDdWork(w) {
+  ddWork = w;
+  document.querySelectorAll('[data-dd]').forEach((b) => b.classList.toggle('active', (b.dataset.dd === 'work') === w));
+  $('dd-hours').hidden = !w;
+  ddTotal();
+}
+document.querySelectorAll('[data-dd]').forEach((b) => b.addEventListener('click', () => setDdWork(b.dataset.dd === 'work')));
+
+function ddPlages() {
+  const v = ['dd-a1', 'dd-a2', 'dd-b1', 'dd-b2'].map((id) => $(id).value);
+  const out = [];
+  if (v[0] && v[1]) out.push([v[0], v[1]]);
+  if (v[2] && v[3]) out.push([v[2], v[3]]);
+  return out;
+}
+function ddTotal() {
+  const t = plagesTotal(ddPlages());
+  $('dd-total').textContent = t ? `${centMin(t)} = ${hhmm(t)}` : '—';
+}
+['dd-a1', 'dd-a2', 'dd-b1', 'dd-b2'].forEach((id) => $(id).addEventListener('input', ddTotal));
+
+function openDay(d) {
+  ddDay = d;
+  const name = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'][d.date.getDay()];
+  $('dd-title').textContent = `${name.charAt(0).toUpperCase() + name.slice(1)} ${d.date.getDate()}/${d.date.getMonth() + 1} · ${d.rot}`;
+  const src = d.plages || d.normal || state.profile.planning.rotations?.[d.rot]?.jours?.find((x) => x) || [];
+  $('dd-a1').value = src[0]?.[0] || '';
+  $('dd-a2').value = src[0]?.[1] || '';
+  $('dd-b1').value = src[1]?.[0] || '';
+  $('dd-b2').value = src[1]?.[1] || '';
+  $('dd-reset').hidden = !d.exception;
+  $('dd-msg').textContent = '';
+  setDdWork(!!d.plages);
+  $('day-dialog').showModal();
+}
+
+async function savePlanning(planning) {
+  const { error } = await sb.from('profiles').update({ planning }).eq('id', state.user.id);
+  if (error) { $('dd-msg').textContent = frError(error); return false; }
+  state.profile.planning = planning;
+  renderWeek();
+  if (!entryFor($('f-date').value)) resetForm($('f-date').value);
+  return true;
+}
+
+$('dd-save').addEventListener('click', async () => {
+  const pl = ddWork ? ddPlages() : null;
+  if (ddWork && (!pl.length || pl.some(([a, b]) => toMin(b) <= toMin(a)))) {
+    $('dd-msg').textContent = 'Vérifie les horaires (début avant fin)';
+    return;
+  }
+  const planning = structuredClone(state.profile.planning);
+  planning.exceptions = planning.exceptions || {};
+  if (JSON.stringify(pl) === JSON.stringify(ddDay.normal ?? null)) delete planning.exceptions[ddDay.iso];
+  else planning.exceptions[ddDay.iso] = pl;
+  if (await savePlanning(planning)) { $('day-dialog').close(); toast('Planning mis à jour'); }
+});
+
+$('dd-reset').addEventListener('click', async () => {
+  const planning = structuredClone(state.profile.planning);
+  delete planning.exceptions?.[ddDay.iso];
+  if (await savePlanning(planning)) { $('day-dialog').close(); toast('Horaire normal remis'); }
+});

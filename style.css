@@ -320,3 +320,42 @@ html.ios-gap, html.ios-gap body { background: var(--card); }
 html.ios-gap .pager { background: var(--bg); }
 html.ios-gap .tabbar { padding-bottom: 2px; }
 html.ios-gap dialog { padding-bottom: 12px; }
+
+/* ---------- Planning de la semaine (accueil) ---------- */
+.week { padding: 12px 12px 6px; margin-top: 16px; }
+.week-head { margin-bottom: 6px; }
+.week-head .center p { line-height: 1.25; }
+.icon-btn.sm { width: 34px; height: 34px; font-size: 18px; }
+.week-days { list-style: none; margin: 0; padding: 0; }
+.week-days li {
+  display: grid;
+  grid-template-columns: 44px 1fr auto;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 6px;
+  border-top: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  border-radius: 10px;
+}
+.week-days li:first-child { border-top: none; }
+.week-days li:active { background: var(--field); }
+.wd { display: flex; flex-direction: column; align-items: center; line-height: 1.1; }
+.wd-n { font-size: 12px; color: var(--muted); font-weight: 600; text-transform: uppercase; letter-spacing: .3px; }
+.wd-d { font-size: 18px; font-weight: 700; }
+.wh { font-size: 14px; }
+.wt { font-weight: 700; font-size: 15px; }
+.wx { display: inline-block; margin-left: 6px; font-size: 11px; color: var(--accent); font-weight: 600; }
+.week-days li.off .wh { color: var(--muted); }
+.week-days li.past { opacity: .5; }
+.week-days li.today { background: var(--field); border-top-color: transparent; opacity: 1; }
+.week-days li.today + li { border-top-color: transparent; }
+.week-days li.today .wd-n, .week-days li.today .wd-d { color: var(--accent); }
+
+.tiles.three { grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.tiles.three .tile { min-height: 104px; padding: 12px 10px; }
+.tiles.three .tile svg { width: 24px; height: 24px; }
+.tiles.three .tile-t { font-size: 15px; margin-top: 10px; }
+.tiles.three .tile-s { font-size: 12px; }
+.adj-btn { width: 100%; margin-top: 10px; }
+input[type=time] { font-size: 17px; width: 100%; }

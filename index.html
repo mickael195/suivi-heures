@@ -64,32 +64,34 @@
             Pour l'installer : bouton <b>Partager</b> de Safari puis <b>Sur l'écran d'accueil</b>.
             <button type="button" class="link" id="ios-hint-close">OK</button>
           </div>
-      <section id="balance-card" class="card balance">
-        <p class="small">Mon solde</p>
-        <p id="balance" class="big">0h00</p>
-        <p id="balance-sub" class="small"></p>
+      <section class="card week" id="week-card">
+        <div class="row between week-head">
+          <button type="button" class="icon-btn sm" id="wk-prev" aria-label="Semaine précédente">‹</button>
+          <div class="center">
+            <p class="strong" id="wk-title">Cette semaine</p>
+            <p class="small muted" id="wk-sub"></p>
+          </div>
+          <button type="button" class="icon-btn sm" id="wk-next" aria-label="Semaine suivante">›</button>
+        </div>
+        <ul class="week-days" id="wk-days"></ul>
+        <p class="small muted center" id="wk-empty" hidden>Planning pas encore configuré</p>
       </section>
 
-      <nav class="tiles">
+      <nav class="tiles three">
         <button type="button" class="tile" data-tab="1">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4M9 15l2 2 4-4"/></svg>
-          <span class="tile-t">Rentrer mes heures</span>
+          <span class="tile-t">Mes heures</span>
           <span class="tile-s" id="tile-today">Aujourd'hui</span>
         </button>
         <button type="button" class="tile" data-tab="2">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h1M11.5 12h1M15 12h1M8 15.5h1M11.5 15.5h1M15 15.5h1M8 19h1M11.5 19h4.5"/></svg>
-          <span class="tile-t">Calculatrice</span>
-          <span class="tile-s">Atelier ⇄ heures</span>
+          <span class="tile-t">Calcul</span>
+          <span class="tile-s">Atelier ⇄ h</span>
         </button>
         <button type="button" class="tile" data-tab="3">
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h9"/></svg>
           <span class="tile-t">Historique</span>
-          <span class="tile-s">Semaine, mois, année</span>
-        </button>
-        <button type="button" class="tile" id="adj-open">
-          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v8M8 8h8M8 19h8"/></svg>
-          <span class="tile-t">Dette ou plus</span>
-          <span class="tile-s">Ajouter à la main</span>
+          <span class="tile-s">Mois, année</span>
         </button>
       </nav>
         </div>
@@ -99,6 +101,12 @@
       <section class="page" data-page="1" aria-label="Mes heures">
         <div class="page-in">
           <h1 class="page-title">Mes heures</h1>
+          <section id="balance-card" class="card balance">
+            <p class="small">Mon solde</p>
+            <p id="balance" class="big">0h00</p>
+            <p id="balance-sub" class="small"></p>
+          </section>
+          <button type="button" class="btn adj-btn" id="adj-open">± Ajouter une dette ou du plus</button>
       <section class="card">
         <form id="entry-form" class="stack">
           <div class="row between">
@@ -219,6 +227,27 @@
       <hr>
       <button class="btn" type="button" id="logout-btn">Se déconnecter</button>
       <p class="small muted center" id="diag"></p>
+    </form>
+  </dialog>
+
+  <!-- Jour du planning -->
+  <dialog id="day-dialog">
+    <form method="dialog" class="stack">
+      <div class="row between"><h2 id="dd-title">Jour</h2><button class="icon-btn" value="cancel" aria-label="Fermer">✕</button></div>
+      <div class="seg">
+        <button type="button" class="seg-btn" data-dd="work">Travail</button>
+        <button type="button" class="seg-btn" data-dd="off">Repos</button>
+      </div>
+      <div id="dd-hours" class="stack">
+        <p class="small muted">Matin</p>
+        <div class="grid2"><input type="time" id="dd-a1"><input type="time" id="dd-a2"></div>
+        <p class="small muted">Après-midi</p>
+        <div class="grid2"><input type="time" id="dd-b1"><input type="time" id="dd-b2"></div>
+        <div class="day-diff"><span class="muted">Total prévu</span><span class="strong" id="dd-total">—</span></div>
+      </div>
+      <p id="dd-msg" class="msg" role="alert"></p>
+      <button class="btn primary" type="button" id="dd-save">Enregistrer ce jour</button>
+      <button class="btn" type="button" id="dd-reset" hidden>Revenir à l'horaire normal</button>
     </form>
   </dialog>
 
