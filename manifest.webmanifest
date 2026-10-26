@@ -1,7 +1,7 @@
 {
-  "name": "Mes heures",
-  "short_name": "Mes heures",
-  "description": "Suivi de mes heures de travail",
+  "name": "Gestion de travail",
+  "short_name": "Travail",
+  "description": "Suivi des heures, calculatrice temps atelier",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

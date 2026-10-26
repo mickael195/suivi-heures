@@ -1,4 +1,4 @@
-# Mes heures
+# Gestion de travail
 
 Petite app (PWA) de suivi des heures de travail : chaque jour on saisit les heures prévues et le temps atelier réellement fait (en centièmes, ex. `7.53`), l'app affiche le solde en heures/minutes (ex. `−4h00`).
 

@@ -435,9 +435,9 @@ async function loadInvites() {
 
 async function shareInvite(code) {
   const url = location.origin + location.pathname;
-  const text = `Je t'invite sur l'app de suivi d'heures. Ouvre ${url} , clique sur "Créer un compte" et mets ce code : ${code}`;
+  const text = `Je t'invite sur l'app Gestion de travail. Ouvre ${url} , clique sur "Créer un compte" et mets ce code : ${code}`;
   if (navigator.share) {
-    try { await navigator.share({ title: 'Mes heures', text }); return; } catch { /* annulé */ }
+    try { await navigator.share({ title: 'Gestion de travail', text }); return; } catch { /* annulé */ }
   }
   try { await navigator.clipboard.writeText(text); toast('Invitation copiée'); } catch { prompt('Copie ce message :', text); }
 }
