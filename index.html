@@ -77,6 +77,27 @@
         <p class="small muted center" id="wk-empty" hidden>Planning pas encore configuré</p>
       </section>
 
+      <section class="card pause-card" id="pause-card">
+        <div id="pause-idle" class="pause-row">
+          <button type="button" class="pause-btn" data-pause="10" data-label="Pause du matin">
+            <span class="pb-t">Pause matin</span><span class="pb-m">10 min</span>
+          </button>
+          <button type="button" class="pause-btn" data-pause="11" data-label="Pause de l'après-midi">
+            <span class="pb-t">Pause aprèm</span><span class="pb-m">11 min</span>
+          </button>
+        </div>
+        <div id="pause-run" class="pause-run" hidden>
+          <div>
+            <p class="small muted" id="pause-label">Pause</p>
+            <p class="pause-left" id="pause-left">10:00</p>
+            <p class="small muted" id="pause-end"></p>
+          </div>
+          <button type="button" class="btn" id="pause-cancel">Annuler</button>
+        </div>
+        <div class="pause-bar" id="pause-bar-wrap" hidden><div id="pause-bar"></div></div>
+        <p class="small muted" id="pause-note"></p>
+      </section>
+
       <nav class="tiles three">
         <button type="button" class="tile" data-tab="1">
           <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4M9 15l2 2 4-4"/></svg>

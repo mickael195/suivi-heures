@@ -122,6 +122,7 @@ async function loadAll() {
   renderHistory();
   state.weekRef = mondayOf(new Date());
   renderWeek();
+  loadPause();
 }
 
 function renderBalance() {
@@ -605,7 +606,7 @@ window.addEventListener('resize', fixHeight);
 window.addEventListener('orientationchange', () => setTimeout(fixHeight, 300));
 
 // Ligne de diagnostic (en bas des réglages) pour régler l'affichage selon le téléphone
-const APP_VERSION = 'v13';
+const APP_VERSION = 'v14';
 function diag() {
   const probe = document.createElement('div');
   probe.style.cssText = 'position:fixed;visibility:hidden;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)';
@@ -742,3 +743,117 @@ $('dd-reset').addEventListener('click', async () => {
   delete planning.exceptions?.[ddDay.iso];
   if (await savePlanning(planning)) { $('day-dialog').close(); toast('Horaire normal remis'); }
 });
+
+// ---------- Pauses avec notification de fin ----------
+const VAPID_PUBLIC = 'BL3x2ukKJbCcuI42vvfnMCmWIv3Hhu_bRdS96yGcm2zHcHtCX8ML8CDBbccRatseSdpFmvrwV1vCp7KRolcho-8';
+let pause = null;        // { id, label, minutes, endsAt (ms) }
+let pauseTick = 0;
+let pauseDismissed = 0; // pause terminée déjà fermée avec OK
+let audioCtx = null;
+
+function b64ToBytes(b64) {
+  const pad = '='.repeat((4 - (b64.length % 4)) % 4);
+  const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from(raw, (c) => c.charCodeAt(0));
+}
+
+// Demande l'autorisation et enregistre ce téléphone pour recevoir les notifications.
+// Renvoie un petit message si ça ne marche pas (sinon '').
+async function ensurePush() {
+  if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
+    return /iphone|ipad/i.test(navigator.userAgent)
+      ? "Notifications : ouvre l'app depuis l'icône de l'écran d'accueil (pas depuis Safari)."
+      : 'Notifications non disponibles sur ce navigateur. Le minuteur marche quand même, app ouverte.';
+  }
+  let perm = Notification.permission;
+  if (perm === 'default') perm = await Notification.requestPermission();
+  if (perm !== 'granted') return 'Notifications refusées : autorise-les dans Réglages > Notifications > Travail.';
+  const reg = await navigator.serviceWorker.ready;
+  let sub = await reg.pushManager.getSubscription();
+  if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(VAPID_PUBLIC) });
+  const j = sub.toJSON();
+  const { error } = await sb.from('push_subscriptions').insert({ user_id: state.user.id, endpoint: j.endpoint, p256dh: j.keys.p256dh, auth: j.keys.auth });
+  if (error && error.code !== '23505') return 'Notification pas enregistrée : ' + frError(error);
+  return '';
+}
+
+function beep() {
+  try {
+    if (!audioCtx) return;
+    [0, 0.35, 0.7].forEach((t) => {
+      const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+      o.frequency.value = 880; o.connect(g); g.connect(audioCtx.destination);
+      g.gain.setValueAtTime(0.0001, audioCtx.currentTime + t);
+      g.gain.exponentialRampToValueAtTime(0.4, audioCtx.currentTime + t + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + t + 0.25);
+      o.start(audioCtx.currentTime + t); o.stop(audioCtx.currentTime + t + 0.3);
+    });
+  } catch { /* pas de son */ }
+}
+
+function renderPause() {
+  clearInterval(pauseTick);
+  const running = !!pause;
+  $('pause-idle').hidden = running;
+  $('pause-run').hidden = !running;
+  $('pause-bar-wrap').hidden = !running;
+  $('pause-run').classList.remove('done');
+  if (!running) return;
+  $('pause-label').textContent = pause.label;
+  const end = new Date(pause.endsAt);
+  $('pause-end').textContent = `Fin à ${end.getHours()}h${String(end.getMinutes()).padStart(2, '0')}`;
+  const tick = () => {
+    const left = Math.max(0, pause.endsAt - Date.now());
+    const s = Math.ceil(left / 1000);
+    $('pause-left').textContent = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+    $('pause-bar').style.width = `${100 - (left / (pause.minutes * 60000)) * 100}%`;
+    if (left <= 0) {
+      clearInterval(pauseTick);
+      $('pause-run').classList.add('done');
+      $('pause-left').textContent = 'Terminée';
+      $('pause-cancel').textContent = 'OK';
+      if (document.visibilityState === 'visible') { buzz([300, 150, 300, 150, 300]); beep(); }
+    }
+  };
+  $('pause-cancel').textContent = 'Annuler';
+  tick();
+  pauseTick = setInterval(tick, 1000);
+}
+
+async function loadPause() {
+  const { data } = await sb.from('pause_timers').select('id,label,minutes,ends_at')
+    .gt('ends_at', new Date(Date.now() - 2 * 60000).toISOString()).order('ends_at', { ascending: false }).limit(1);
+  const p = data?.[0];
+  pause = p && p.id !== pauseDismissed ? { id: p.id, label: p.label, minutes: p.minutes, endsAt: new Date(p.ends_at).getTime() } : null;
+  renderPause();
+}
+
+document.querySelectorAll('[data-pause]').forEach((b) => b.addEventListener('click', async () => {
+  const minutes = Number(b.dataset.pause);
+  const label = b.dataset.label;
+  try { audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)(); audioCtx.resume(); } catch { /* */ }
+  const note = $('pause-note');
+  note.textContent = '';
+  const pushMsg = await ensurePush().catch((e) => 'Notifications : ' + (e.message || e));
+  const endsAt = Date.now() + minutes * 60000;
+  const { data, error } = await sb.from('pause_timers')
+    .insert({ user_id: state.user.id, label, minutes, ends_at: new Date(endsAt).toISOString() })
+    .select('id').single();
+  if (error) { note.textContent = frError(error); return; }
+  pause = { id: data.id, label, minutes, endsAt };
+  buzz(15);
+  renderPause();
+  note.textContent = pushMsg || 'Tu recevras une notification à la fin, même téléphone verrouillé.';
+}));
+
+$('pause-cancel').addEventListener('click', async () => {
+  if (!pause) return;
+  const done = pause.endsAt <= Date.now();
+  if (!done) await sb.from('pause_timers').delete().eq('id', pause.id);
+  else pauseDismissed = pause.id;
+  pause = null;
+  $('pause-note').textContent = done ? '' : 'Pause annulée';
+  renderPause();
+});
+
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && state.user) loadPause(); });

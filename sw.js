@@ -1,6 +1,6 @@
 // Service worker : app installable + coquille dispo hors ligne.
 // Réseau d'abord (pour toujours avoir la dernière version), cache en secours.
-const CACHE = 'travail-v13';
+const CACHE = 'travail-v14';
 const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'time.js', 'manifest.webmanifest', 'icons/icon-192.png', 'planning.js'];
 
 self.addEventListener('install', (e) => {
@@ -35,4 +35,27 @@ self.addEventListener('fetch', (e) => {
       })
       .catch(() => caches.match(req).then((r) => r || caches.match('index.html')))
   );
+});
+
+// Notification "fin de pause" envoyée par le serveur
+self.addEventListener('push', (e) => {
+  let d = {};
+  try { d = e.data ? e.data.json() : {}; } catch { d = { body: e.data && e.data.text() }; }
+  e.waitUntil(self.registration.showNotification(d.title || 'Fin de pause', {
+    body: d.body || 'Ta pause est terminée',
+    tag: d.tag || 'pause',
+    icon: 'icons/icon-192.png',
+    badge: 'icons/icon-192.png',
+    vibrate: [300, 150, 300, 150, 300],
+    requireInteraction: true,
+  }));
+});
+
+self.addEventListener('notificationclick', (e) => {
+  e.notification.close();
+  e.waitUntil((async () => {
+    const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    if (all.length) return all[0].focus();
+    return self.clients.openWindow('./');
+  })());
 });
