@@ -371,6 +371,7 @@ $('settings-btn').addEventListener('click', () => {
   $('settings-msg').textContent = '';
   $('admin-zone').hidden = !p.is_admin;
   if (p.is_admin) loadInvites();
+  $('diag').textContent = diag();
   $('settings').showModal();
 });
 
@@ -580,3 +581,17 @@ function fixHeight() {
 fixHeight();
 window.addEventListener('resize', fixHeight);
 window.addEventListener('orientationchange', () => setTimeout(fixHeight, 300));
+
+// Ligne de diagnostic (en bas des réglages) pour régler l'affichage selon le téléphone
+const APP_VERSION = 'v10';
+function diag() {
+  const probe = document.createElement('div');
+  probe.style.cssText = 'position:fixed;visibility:hidden;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)';
+  document.body.appendChild(probe);
+  const cs = getComputedStyle(probe);
+  const st = parseInt(cs.paddingTop) || 0, sb = parseInt(cs.paddingBottom) || 0;
+  probe.remove();
+  const sa = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone ? 'app' : 'web';
+  const vv = window.visualViewport ? Math.round(visualViewport.height) + '/' + Math.round(visualViewport.offsetTop) : '-';
+  return `${APP_VERSION} · ${sa} · écran ${screen.height} · vue ${innerHeight} · vv ${vv} · haut ${st} · bas ${sb} · app ${$('app-view').getBoundingClientRect().height | 0}`;
+}

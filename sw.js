@@ -1,6 +1,6 @@
 // Service worker : app installable + coquille dispo hors ligne.
 // Réseau d'abord (pour toujours avoir la dernière version), cache en secours.
-const CACHE = 'travail-v9';
+const CACHE = 'travail-v10';
 const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'time.js', 'manifest.webmanifest', 'icons/icon-192.png'];
 
 self.addEventListener('install', (e) => {
