@@ -573,17 +573,17 @@ $('k-add-btn').addEventListener('click', addK);
 $('k-add').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addK(); } });
 $('k-clear').addEventListener('click', () => { kItems = []; renderK(); });
 
-// iPhone (app installée) : iOS annonce parfois un écran plus court que la réalité
-// (il oublie la barre d'état), ce qui laisse un vide sous la barre d'onglets.
-// On force la hauteur réelle de l'écran.
+// iPhone (app installée) : sur certaines versions d'iOS, la zone de l'app s'arrête
+// avant le bas de l'écran (bug d'iOS). On ne peut pas dessiner dedans avec la barre,
+// alors on la colore comme la barre d'onglets pour qu'elle fasse corps avec elle.
 function fixHeight() {
   const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
   const portrait = window.matchMedia('(orientation: portrait)').matches;
-  let h = window.innerHeight;
-  if (standalone && /iphone|ipod/i.test(navigator.userAgent)) {
-    h = Math.max(h, portrait ? screen.height : screen.width);
-  }
+  const h = window.innerHeight;
   document.documentElement.style.setProperty('--app-h', h + 'px');
+  const full = portrait ? screen.height : screen.width;
+  const gap = standalone && /iphone|ipod/i.test(navigator.userAgent) && full - h > 20;
+  document.documentElement.classList.toggle('ios-gap', gap);
 }
 fixHeight();
 window.addEventListener('resize', fixHeight);
