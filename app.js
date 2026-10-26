@@ -575,15 +575,32 @@ $('k-add').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preve
 $('k-clear').addEventListener('click', () => { kItems = []; renderK(); });
 
 // Hauteur de l'app = zone visible réelle
+function safeTop() {
+  const p = document.createElement('div');
+  p.style.cssText = 'position:fixed;visibility:hidden;padding-top:env(safe-area-inset-top)';
+  document.body.appendChild(p);
+  const v = parseInt(getComputedStyle(p).paddingTop) || 0;
+  p.remove();
+  return v;
+}
 function fixHeight() {
-  document.documentElement.style.setProperty('--app-h', window.innerHeight + 'px');
+  const h = window.innerHeight;
+  document.documentElement.style.setProperty('--app-h', h + 'px');
+  // Bug iOS (app installée) : la zone de l'app s'arrête avant le bas de l'écran
+  // (écran 852, app 793 = écran - barre d'état). On colore la bande du bas comme
+  // la barre d'onglets pour qu'elles ne fassent qu'une.
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  const portrait = window.matchMedia('(orientation: portrait)').matches;
+  const full = portrait ? screen.height : screen.width;
+  const gap = standalone && /iphone|ipod/i.test(navigator.userAgent) && full - h > 20 && h + safeTop() <= full + 2;
+  document.documentElement.classList.toggle('ios-gap', gap);
 }
 fixHeight();
 window.addEventListener('resize', fixHeight);
 window.addEventListener('orientationchange', () => setTimeout(fixHeight, 300));
 
 // Ligne de diagnostic (en bas des réglages) pour régler l'affichage selon le téléphone
-const APP_VERSION = 'v10';
+const APP_VERSION = 'v11';
 function diag() {
   const probe = document.createElement('div');
   probe.style.cssText = 'position:fixed;visibility:hidden;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)';
@@ -593,5 +610,5 @@ function diag() {
   probe.remove();
   const sa = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone ? 'app' : 'web';
   const vv = window.visualViewport ? Math.round(visualViewport.height) + '/' + Math.round(visualViewport.offsetTop) : '-';
-  return `${APP_VERSION} · ${sa} · écran ${screen.height} · vue ${innerHeight} · vv ${vv} · haut ${st} · bas ${sb} · app ${$('app-view').getBoundingClientRect().height | 0}`;
+  return `${APP_VERSION} · ${sa} · écran ${screen.height} · vue ${innerHeight} · vv ${vv} · haut ${st} · bas ${sb} · app ${$('app-view').getBoundingClientRect().height | 0}${document.documentElement.classList.contains('ios-gap') ? ' · correctif iOS' : ''}`;
 }
