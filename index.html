@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="fr">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Mes heures</title>
+  <meta name="theme-color" content="#14161a">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Mes heures">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Écran de connexion -->
+  <main id="auth-view" class="view" hidden>
+    <div class="auth-box">
+      <div class="logo"><img src="icons/icon-192.png" alt=""></div>
+      <h1>Mes heures</h1>
+      <p class="muted">Accès réservé sur invitation</p>
+
+      <div class="seg" role="tablist">
+        <button type="button" class="seg-btn active" data-auth-tab="login">Connexion</button>
+        <button type="button" class="seg-btn" data-auth-tab="signup">Créer un compte</button>
+      </div>
+
+      <form id="login-form" class="stack">
+        <label>Email<input type="email" name="email" autocomplete="email" required></label>
+        <label>Mot de passe<input type="password" name="password" autocomplete="current-password" required></label>
+        <button class="btn primary" type="submit">Se connecter</button>
+      </form>
+
+      <form id="signup-form" class="stack" hidden>
+        <label>Code d'invitation<input name="code" autocomplete="off" autocapitalize="characters" required placeholder="A1B2C3D4"></label>
+        <label>Prénom<input name="name" autocomplete="given-name" required></label>
+        <label>Email<input type="email" name="email" autocomplete="email" required></label>
+        <label>Mot de passe (6 caractères min.)<input type="password" name="password" autocomplete="new-password" minlength="6" required></label>
+        <button class="btn primary" type="submit">Créer mon compte</button>
+      </form>
+      <p id="auth-msg" class="msg" role="alert"></p>
+    </div>
+  </main>
+
+  <!-- App -->
+  <main id="app-view" class="view" hidden>
+    <header class="topbar">
+      <div>
+        <p class="muted small">Bonjour</p>
+        <p id="hello-name" class="strong"></p>
+      </div>
+      <div class="row">
+        <button id="install-btn" class="icon-btn" type="button" hidden title="Installer l'app" aria-label="Installer l'app">⤓</button>
+        <button id="settings-btn" class="icon-btn" type="button" title="Réglages" aria-label="Réglages">⚙</button>
+      </div>
+    </header>
+
+    <div id="ios-hint" class="hint" hidden>
+      Pour l'installer : bouton <b>Partager</b> de Safari puis <b>Sur l'écran d'accueil</b>.
+      <button type="button" class="link" id="ios-hint-close">OK</button>
+    </div>
+
+    <section id="balance-card" class="card balance">
+      <p class="small">Mon solde</p>
+      <p id="balance" class="big">0h00</p>
+      <p id="balance-sub" class="small"></p>
+    </section>
+    <button type="button" class="btn adj-btn" id="adj-open">± Ajouter une dette ou du plus</button>
+
+    <section class="card">
+      <form id="entry-form" class="stack">
+        <div class="row between">
+          <h2 id="form-title">Ma journée</h2>
+          <input type="date" id="f-date" name="jour" required>
+        </div>
+        <div class="grid2">
+          <label>Heures prévues
+            <input id="f-prevu" name="prevu" inputmode="decimal" placeholder="7.50 ou 7h30" required autocomplete="off">
+            <span class="conv" id="c-prevu"></span>
+          </label>
+          <label>Temps atelier
+            <input id="f-travail" name="travail" inputmode="decimal" placeholder="7.53" required autocomplete="off">
+            <span class="conv" id="c-travail"></span>
+          </label>
+        </div>
+        <div class="day-diff">
+          <span class="muted">Écart du jour</span>
+          <span id="day-diff" class="strong">—</span>
+        </div>
+        <p id="entry-msg" class="msg" role="alert"></p>
+        <div class="row gap">
+          <button class="btn primary grow" type="submit" id="save-btn">Enregistrer</button>
+          <button class="btn danger" type="button" id="delete-btn" hidden>Supprimer</button>
+        </div>
+        <p class="muted small">Pauses non comptées. Tu peux taper 7.53 (centièmes) ou 7h32.</p>
+      </form>
+    </section>
+
+    <section class="card">
+      <div class="seg" id="period-seg">
+        <button type="button" class="seg-btn" data-period="week">Semaine</button>
+        <button type="button" class="seg-btn active" data-period="month">Mois</button>
+        <button type="button" class="seg-btn" data-period="year">Année</button>
+        <button type="button" class="seg-btn" data-period="all">Tout</button>
+      </div>
+      <div class="row between period-nav">
+        <button type="button" class="icon-btn" id="prev-period" aria-label="Période précédente">‹</button>
+        <p id="period-label" class="strong"></p>
+        <button type="button" class="icon-btn" id="next-period" aria-label="Période suivante">›</button>
+      </div>
+      <div class="stats">
+        <div><p class="small muted">Prévu</p><p id="st-prevu" class="strong">—</p></div>
+        <div><p class="small muted">Fait</p><p id="st-fait" class="strong">—</p></div>
+        <div><p class="small muted">Écart</p><p id="st-ecart" class="strong">—</p></div>
+      </div>
+      <ul id="history" class="history"></ul>
+      <p id="history-empty" class="muted center small" hidden>Aucune journée sur cette période</p>
+    </section>
+    <p class="muted small center footer">Touche une journée pour la modifier</p>
+  </main>
+
+  <!-- Réglages -->
+  <dialog id="settings">
+    <form method="dialog" class="stack" id="settings-form">
+      <div class="row between"><h2>Réglages</h2><button class="icon-btn" value="cancel" aria-label="Fermer">✕</button></div>
+      <label>Prénom<input name="name" id="s-name"></label>
+      <label>Heures prévues par défaut<input name="prevu" id="s-prevu" inputmode="decimal" placeholder="7h00"></label>
+      <p id="settings-msg" class="msg" role="alert"></p>
+      <button class="btn primary" type="button" id="settings-save">Enregistrer</button>
+
+      <div id="admin-zone" hidden>
+        <hr>
+        <h3>Inviter un collègue</h3>
+        <p class="small muted">Chaque code permet de créer un compte. Le collègue aura son espace privé, tu ne vois pas ses heures.</p>
+        <div class="row gap">
+          <button class="btn grow" type="button" id="new-invite">Générer un code</button>
+        </div>
+        <ul id="invites" class="invites"></ul>
+      </div>
+      <hr>
+      <button class="btn" type="button" id="logout-btn">Se déconnecter</button>
+    </form>
+  </dialog>
+
+  <!-- Dette / plus -->
+  <dialog id="adj-dialog">
+    <form method="dialog" class="stack" id="adj-form">
+      <div class="row between"><h2 id="adj-title">Dette ou plus</h2><button class="icon-btn" value="cancel" aria-label="Fermer">✕</button></div>
+      <div class="seg" id="adj-sens">
+        <button type="button" class="seg-btn active" data-sens="-1">Je dois à l'entreprise</button>
+        <button type="button" class="seg-btn" data-sens="1">L'entreprise me doit</button>
+      </div>
+      <div class="grid2">
+        <label>Durée<input id="adj-duree" inputmode="decimal" placeholder="4h00 ou 4" autocomplete="off"><span class="conv" id="c-adj"></span></label>
+        <label>Date<input type="date" id="adj-date"></label>
+      </div>
+      <label>Note (facultatif)<input id="adj-note" maxlength="120" placeholder="Report ancien solde"></label>
+      <p id="adj-msg" class="msg" role="alert"></p>
+      <div class="row gap">
+        <button class="btn primary grow" type="button" id="adj-save">Ajouter</button>
+        <button class="btn danger" type="button" id="adj-delete" hidden>Supprimer</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" hidden></div>
+  <script type="module" src="app.js"></script>
+</body>
+</html>
