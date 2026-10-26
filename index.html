@@ -77,7 +77,7 @@
         </div>
         <div class="grid2">
           <label>Heures prévues
-            <input id="f-prevu" name="prevu" inputmode="decimal" placeholder="7.50 ou 7h30" required autocomplete="off">
+            <input id="f-prevu" name="prevu" inputmode="text" placeholder="7.50 ou 7h30" required autocomplete="off">
             <span class="conv" id="c-prevu"></span>
           </label>
           <label>Temps atelier
@@ -126,7 +126,7 @@
     <form method="dialog" class="stack" id="settings-form">
       <div class="row between"><h2>Réglages</h2><button class="icon-btn" value="cancel" aria-label="Fermer">✕</button></div>
       <label>Prénom<input name="name" id="s-name"></label>
-      <label>Heures prévues par défaut<input name="prevu" id="s-prevu" inputmode="decimal" placeholder="7h00"></label>
+      <label>Heures prévues par défaut<input name="prevu" id="s-prevu" inputmode="text" placeholder="7h00"></label>
       <p id="settings-msg" class="msg" role="alert"></p>
       <button class="btn primary" type="button" id="settings-save">Enregistrer</button>
 
@@ -153,7 +153,7 @@
         <button type="button" class="seg-btn" data-sens="1">L'entreprise me doit</button>
       </div>
       <div class="grid2">
-        <label>Durée<input id="adj-duree" inputmode="decimal" placeholder="4h00 ou 4" autocomplete="off"><span class="conv" id="c-adj"></span></label>
+        <label>Durée<input id="adj-duree" inputmode="text" placeholder="4h00 ou 4" autocomplete="off"><span class="conv" id="c-adj"></span></label>
         <label>Date<input type="date" id="adj-date"></label>
       </div>
       <label>Note (facultatif)<input id="adj-note" maxlength="120" placeholder="Report ancien solde"></label>
