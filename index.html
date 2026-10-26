@@ -45,80 +45,157 @@
   </main>
 
   <!-- App -->
-  <main id="app-view" class="view" hidden>
-    <header class="topbar">
-      <div>
-        <p class="muted small">Bonjour</p>
-        <p id="hello-name" class="strong"></p>
-      </div>
-      <div class="row">
-        <button id="install-btn" class="icon-btn" type="button" hidden title="Installer l'app" aria-label="Installer l'app">⤓</button>
-        <button id="settings-btn" class="icon-btn" type="button" title="Réglages" aria-label="Réglages">⚙</button>
-      </div>
-    </header>
+  <main id="app-view" hidden>
+    <div class="pager" id="pager">
+      <!-- Accueil -->
+      <section class="page" data-page="0" aria-label="Accueil">
+        <div class="page-in">
+          <header class="topbar">
+            <div>
+              <p class="muted small">Bonjour</p>
+              <p id="hello-name" class="hello"></p>
+            </div>
+            <div class="row">
+              <button id="install-btn" class="icon-btn" type="button" hidden aria-label="Installer l'app">⤓</button>
+              <button id="settings-btn" class="icon-btn" type="button" aria-label="Réglages">⚙</button>
+            </div>
+          </header>
+          <div id="ios-hint" class="hint" hidden>
+            Pour l'installer : bouton <b>Partager</b> de Safari puis <b>Sur l'écran d'accueil</b>.
+            <button type="button" class="link" id="ios-hint-close">OK</button>
+          </div>
+      <section id="balance-card" class="card balance">
+        <p class="small">Mon solde</p>
+        <p id="balance" class="big">0h00</p>
+        <p id="balance-sub" class="small"></p>
+      </section>
 
-    <div id="ios-hint" class="hint" hidden>
-      Pour l'installer : bouton <b>Partager</b> de Safari puis <b>Sur l'écran d'accueil</b>.
-      <button type="button" class="link" id="ios-hint-close">OK</button>
+      <nav class="tiles">
+        <button type="button" class="tile" data-tab="1">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4M9 15l2 2 4-4"/></svg>
+          <span class="tile-t">Rentrer mes heures</span>
+          <span class="tile-s" id="tile-today">Aujourd'hui</span>
+        </button>
+        <button type="button" class="tile" data-tab="2">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h1M11.5 12h1M15 12h1M8 15.5h1M11.5 15.5h1M15 15.5h1M8 19h1M11.5 19h4.5"/></svg>
+          <span class="tile-t">Calculatrice</span>
+          <span class="tile-s">Atelier ⇄ heures</span>
+        </button>
+        <button type="button" class="tile" data-tab="3">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h9"/></svg>
+          <span class="tile-t">Historique</span>
+          <span class="tile-s">Semaine, mois, année</span>
+        </button>
+        <button type="button" class="tile" id="adj-open">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v8M8 8h8M8 19h8"/></svg>
+          <span class="tile-t">Dette ou plus</span>
+          <span class="tile-s">Ajouter à la main</span>
+        </button>
+      </nav>
+        </div>
+      </section>
+
+      <!-- Saisie -->
+      <section class="page" data-page="1" aria-label="Mes heures">
+        <div class="page-in">
+          <h1 class="page-title">Mes heures</h1>
+      <section class="card">
+        <form id="entry-form" class="stack">
+          <div class="row between">
+            <h2 id="form-title">Ma journée</h2>
+            <input type="date" id="f-date" name="jour" required>
+          </div>
+          <div class="grid2">
+            <label>Heures prévues
+              <input id="f-prevu" name="prevu" inputmode="text" placeholder="7.50 ou 7h30" required autocomplete="off">
+              <span class="conv" id="c-prevu"></span>
+            </label>
+            <label>Temps atelier
+              <input id="f-travail" name="travail" inputmode="decimal" placeholder="7.99" required autocomplete="off">
+              <span class="conv" id="c-travail"></span>
+            </label>
+          </div>
+          <div class="day-diff">
+            <span class="muted">Écart du jour</span>
+            <span id="day-diff" class="strong">—</span>
+          </div>
+          <p id="entry-msg" class="msg" role="alert"></p>
+          <div class="row gap">
+            <button class="btn primary grow" type="submit" id="save-btn">Enregistrer</button>
+            <button class="btn danger" type="button" id="delete-btn" hidden>Supprimer</button>
+          </div>
+          <p class="muted small">Recopie le total de la borne (pauses comprises). Tu peux taper 7.99 (centièmes) ou 7h59.</p>
+        </form>
+      </section>
+
+        </div>
+      </section>
+
+      <!-- Calculatrice -->
+      <section class="page" data-page="2" aria-label="Calculatrice">
+        <div class="page-in">
+          <h1 class="page-title">Calculatrice</h1>
+        <section class="card stack">
+          <h2>Temps atelier → heures</h2>
+          <input id="k-atelier" inputmode="decimal" placeholder="7,99" autocomplete="off" class="big-input">
+          <p class="result" id="k-atelier-res">—</p>
+        </section>
+        <section class="card stack">
+          <h2>Heures → temps atelier</h2>
+          <div class="hm">
+            <input id="k-h" inputmode="numeric" placeholder="7" autocomplete="off" class="big-input"><span>h</span>
+            <input id="k-m" inputmode="numeric" placeholder="59" autocomplete="off" class="big-input"><span>min</span>
+          </div>
+          <p class="result" id="k-hm-res">—</p>
+        </section>
+        <section class="card stack">
+          <div class="row between"><h2>Additionner</h2><button type="button" class="link" id="k-clear">Effacer</button></div>
+          <p class="muted small">Ajoute tes temps un par un, comme les lignes de la borne.</p>
+          <div class="row gap">
+            <input id="k-add" inputmode="decimal" placeholder="0,71" autocomplete="off" class="grow">
+            <button type="button" class="btn primary" id="k-add-btn" aria-label="Ajouter">+</button>
+          </div>
+          <ul id="k-list" class="k-list"></ul>
+          <div class="day-diff"><span class="muted">Total</span><span class="strong" id="k-total">0,00 = 0h00</span></div>
+        </section>
+        </div>
+      </section>
+
+      <!-- Historique -->
+      <section class="page" data-page="3" aria-label="Historique">
+        <div class="page-in">
+          <h1 class="page-title">Historique</h1>
+      <section class="card">
+        <div class="seg" id="period-seg">
+          <button type="button" class="seg-btn" data-period="week">Semaine</button>
+          <button type="button" class="seg-btn active" data-period="month">Mois</button>
+          <button type="button" class="seg-btn" data-period="year">Année</button>
+          <button type="button" class="seg-btn" data-period="all">Tout</button>
+        </div>
+        <div class="row between period-nav">
+          <button type="button" class="icon-btn" id="prev-period" aria-label="Période précédente">‹</button>
+          <p id="period-label" class="strong"></p>
+          <button type="button" class="icon-btn" id="next-period" aria-label="Période suivante">›</button>
+        </div>
+        <div class="stats">
+          <div><p class="small muted">Prévu</p><p id="st-prevu" class="strong">—</p></div>
+          <div><p class="small muted">Fait</p><p id="st-fait" class="strong">—</p></div>
+          <div><p class="small muted">Écart</p><p id="st-ecart" class="strong">—</p></div>
+        </div>
+        <ul id="history" class="history"></ul>
+        <p id="history-empty" class="muted center small" hidden>Aucune journée sur cette période</p>
+      </section>
+          <p class="muted small center">Touche une journée pour la modifier</p>
+        </div>
+      </section>
     </div>
 
-    <section id="balance-card" class="card balance">
-      <p class="small">Mon solde</p>
-      <p id="balance" class="big">0h00</p>
-      <p id="balance-sub" class="small"></p>
-    </section>
-    <button type="button" class="btn adj-btn" id="adj-open">± Ajouter une dette ou du plus</button>
-
-    <section class="card">
-      <form id="entry-form" class="stack">
-        <div class="row between">
-          <h2 id="form-title">Ma journée</h2>
-          <input type="date" id="f-date" name="jour" required>
-        </div>
-        <div class="grid2">
-          <label>Heures prévues
-            <input id="f-prevu" name="prevu" inputmode="text" placeholder="7.50 ou 7h30" required autocomplete="off">
-            <span class="conv" id="c-prevu"></span>
-          </label>
-          <label>Temps atelier
-            <input id="f-travail" name="travail" inputmode="decimal" placeholder="7.99" required autocomplete="off">
-            <span class="conv" id="c-travail"></span>
-          </label>
-        </div>
-        <div class="day-diff">
-          <span class="muted">Écart du jour</span>
-          <span id="day-diff" class="strong">—</span>
-        </div>
-        <p id="entry-msg" class="msg" role="alert"></p>
-        <div class="row gap">
-          <button class="btn primary grow" type="submit" id="save-btn">Enregistrer</button>
-          <button class="btn danger" type="button" id="delete-btn" hidden>Supprimer</button>
-        </div>
-        <p class="muted small">Recopie le total de la borne (pauses comprises). Tu peux taper 7.99 (centièmes) ou 7h59.</p>
-      </form>
-    </section>
-
-    <section class="card">
-      <div class="seg" id="period-seg">
-        <button type="button" class="seg-btn" data-period="week">Semaine</button>
-        <button type="button" class="seg-btn active" data-period="month">Mois</button>
-        <button type="button" class="seg-btn" data-period="year">Année</button>
-        <button type="button" class="seg-btn" data-period="all">Tout</button>
-      </div>
-      <div class="row between period-nav">
-        <button type="button" class="icon-btn" id="prev-period" aria-label="Période précédente">‹</button>
-        <p id="period-label" class="strong"></p>
-        <button type="button" class="icon-btn" id="next-period" aria-label="Période suivante">›</button>
-      </div>
-      <div class="stats">
-        <div><p class="small muted">Prévu</p><p id="st-prevu" class="strong">—</p></div>
-        <div><p class="small muted">Fait</p><p id="st-fait" class="strong">—</p></div>
-        <div><p class="small muted">Écart</p><p id="st-ecart" class="strong">—</p></div>
-      </div>
-      <ul id="history" class="history"></ul>
-      <p id="history-empty" class="muted center small" hidden>Aucune journée sur cette période</p>
-    </section>
-    <p class="muted small center footer">Touche une journée pour la modifier</p>
+    <nav class="tabbar" id="tabbar">
+      <button type="button" class="tab active" data-tab="0"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-7 8 7v9H4z"/><path d="M10 20v-5h4v5"/></svg><span>Accueil</span></button>
+      <button type="button" class="tab" data-tab="1"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><span>Heures</span></button>
+      <button type="button" class="tab" data-tab="2"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h1M12 12h0M15 12h1M8 16h1M15 16h1"/></svg><span>Calcul</span></button>
+      <button type="button" class="tab" data-tab="3"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h9"/></svg><span>Historique</span></button>
+    </nav>
   </main>
 
   <!-- Réglages -->

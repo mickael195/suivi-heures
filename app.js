@@ -191,6 +191,7 @@ $('entry-form').addEventListener('submit', async (e) => {
   if (error) { msg.textContent = frError(error); return; }
   state.entries = state.entries.filter((x) => x.jour !== jour).concat(data).sort((a, b) => (a.jour < b.jour ? 1 : -1));
   toast(`Enregistré : ${fmtSigned(travail - prevu)} sur la journée`);
+  buzz(15);
   renderBalance();
   renderHistory();
   resetForm(jour);
@@ -267,7 +268,7 @@ function renderHistory() {
     li.append(c1, c2, c3);
     li.addEventListener('click', () => {
       resetForm(x.jour);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      goTo(1);
     });
     ul.appendChild(li);
   }
@@ -481,3 +482,93 @@ document.addEventListener('visibilitychange', () => {
     resetForm(isoDate(new Date()));
   }
 });
+
+// ---------- Navigation mobile (pages qu'on fait glisser) ----------
+const pager = $('pager');
+const tabs = [...document.querySelectorAll('.tab')];
+let currentPage = 0;
+
+function buzz(ms = 8) { try { navigator.vibrate && navigator.vibrate(ms); } catch { /* iPhone : pas de vibration web */ } }
+
+function setActiveTab(i) {
+  if (i === currentPage) return;
+  currentPage = i;
+  tabs.forEach((t, k) => t.classList.toggle('active', k === i));
+  buzz(6);
+  if (document.activeElement && document.activeElement.blur && document.activeElement.tagName === 'INPUT') {
+    document.activeElement.blur();
+  }
+}
+
+function goTo(i, smooth = true) {
+  pager.scrollTo({ left: i * pager.clientWidth, behavior: smooth ? 'smooth' : 'auto' });
+  setActiveTab(i);
+}
+
+let scrollRaf = 0;
+pager.addEventListener('scroll', () => {
+  cancelAnimationFrame(scrollRaf);
+  scrollRaf = requestAnimationFrame(() => {
+    const i = Math.round(pager.scrollLeft / Math.max(1, pager.clientWidth));
+    setActiveTab(Math.max(0, Math.min(3, i)));
+  });
+}, { passive: true });
+
+document.querySelectorAll('[data-tab]').forEach((b) => {
+  b.addEventListener('click', () => goTo(Number(b.dataset.tab)));
+});
+// Garder la bonne page quand on tourne le téléphone / redimensionne
+window.addEventListener('resize', () => goTo(currentPage, false));
+
+// ---------- Calculatrice ----------
+const dec = (min) => (Math.round((min / 60) * 100) / 100).toFixed(2).replace('.', ',');
+
+$('k-atelier').addEventListener('input', () => {
+  const v = parseDuree($('k-atelier').value);
+  $('k-atelier-res').textContent = v == null ? '—' : fmt(v);
+});
+
+function calcHM() {
+  const hs = $('k-h').value.trim(), ms = $('k-m').value.trim();
+  if (hs === '' && ms === '') { $('k-hm-res').textContent = '—'; return; }
+  const h = hs === '' ? 0 : Number(hs), m = ms === '' ? 0 : Number(ms);
+  if (!Number.isInteger(h) || !Number.isInteger(m) || h < 0 || m < 0 || m > 59) { $('k-hm-res').textContent = 'Minutes entre 0 et 59'; return; }
+  $('k-hm-res').textContent = dec(h * 60 + m);
+}
+$('k-h').addEventListener('input', calcHM);
+$('k-m').addEventListener('input', calcHM);
+
+let kItems = []; // en centièmes d'heure
+const cent = (c) => (c / 100).toFixed(2).replace('.', ',');
+function renderK() {
+  const ul = $('k-list');
+  ul.innerHTML = '';
+  kItems.forEach((v, i) => {
+    const li = document.createElement('li');
+    li.textContent = cent(v);
+    const x = document.createElement('button');
+    x.type = 'button';
+    x.setAttribute('aria-label', 'Retirer');
+    x.textContent = '✕';
+    x.addEventListener('click', () => { kItems.splice(i, 1); renderK(); });
+    li.appendChild(x);
+    ul.appendChild(li);
+  });
+  const tot = kItems.reduce((a, b) => a + b, 0);
+  $('k-total').textContent = `${cent(tot)} = ${fmt(tot * 0.6)}`;
+}
+function addK() {
+  // on additionne en centièmes exacts (comme la borne), sans arrondir à la minute
+  const raw = $('k-add').value.trim().replace(',', '.');
+  let v = /^\d{1,3}(\.\d{1,2})?$/.test(raw) ? Math.round(parseFloat(raw) * 100) : null;
+  if (v == null) { const m = parseDuree($('k-add').value); if (m != null) v = Math.round((m / 60) * 100); }
+  if (v == null) { $('k-add').focus(); return; }
+  kItems.push(v);
+  $('k-add').value = '';
+  $('k-add').focus();
+  buzz(5);
+  renderK();
+}
+$('k-add-btn').addEventListener('click', addK);
+$('k-add').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addK(); } });
+$('k-clear').addEventListener('click', () => { kItems = []; renderK(); });
