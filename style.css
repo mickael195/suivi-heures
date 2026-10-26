@@ -308,3 +308,8 @@ button { touch-action: manipulation; }
 @keyframes sheet-up { from { transform: translateY(40px); opacity: .6; } to { transform: none; opacity: 1; } }
 .toast { bottom: calc(env(safe-area-inset-bottom) + 76px); }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+/* iPhone (app installée) : l'écran fait toute la hauteur, barre d'onglets collée en bas */
+#app-view { top: 0; left: 0; right: 0; bottom: auto; height: 100vh; height: 100lvh; }
+/* Exemples dans les cases : bien plus pâles pour ne pas les confondre avec une vraie valeur */
+input::placeholder { color: var(--muted); opacity: .45; }
