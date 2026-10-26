@@ -572,3 +572,19 @@ function addK() {
 $('k-add-btn').addEventListener('click', addK);
 $('k-add').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addK(); } });
 $('k-clear').addEventListener('click', () => { kItems = []; renderK(); });
+
+// iPhone (app installée) : iOS annonce parfois un écran plus court que la réalité
+// (il oublie la barre d'état), ce qui laisse un vide sous la barre d'onglets.
+// On force la hauteur réelle de l'écran.
+function fixHeight() {
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  const portrait = window.matchMedia('(orientation: portrait)').matches;
+  let h = window.innerHeight;
+  if (standalone && /iphone|ipod/i.test(navigator.userAgent)) {
+    h = Math.max(h, portrait ? screen.height : screen.width);
+  }
+  document.documentElement.style.setProperty('--app-h', h + 'px');
+}
+fixHeight();
+window.addEventListener('resize', fixHeight);
+window.addEventListener('orientationchange', () => setTimeout(fixHeight, 300));

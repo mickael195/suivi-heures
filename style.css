@@ -313,3 +313,4 @@ button { touch-action: manipulation; }
 #app-view { top: 0; left: 0; right: 0; bottom: auto; height: 100vh; height: 100lvh; }
 /* Exemples dans les cases : bien plus pâles pour ne pas les confondre avec une vraie valeur */
 input::placeholder { color: var(--muted); opacity: .45; }
+#app-view { height: var(--app-h, 100lvh); }
