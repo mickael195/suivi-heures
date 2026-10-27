@@ -281,27 +281,6 @@ input[type=time] { font-size: 17px; width: 100%; min-height: 46px; }
 .week-days li.today + li { border-top-color: transparent; }
 .week-days li.today .wd-n, .week-days li.today .wd-d { color: var(--accent); }
 
-/* Pauses */
-.pause-card { padding: 12px; }
-.pause-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-.pause-btn {
-  font: inherit; border: none; border-radius: 18px; padding: 14px;
-  display: flex; flex-direction: column; align-items: flex-start; gap: 1px;
-  cursor: pointer; transition: transform .12s ease;
-  background: rgba(255, 149, 0, 0.12); color: #c25e00;
-}
-.pause-btn + .pause-btn { background: rgba(88, 86, 214, 0.12); color: var(--indigo); }
-.pause-btn:active { transform: scale(0.96); }
-.pb-t { font-weight: 600; font-size: 17px; letter-spacing: -0.3px; }
-.pb-m { font-size: 13px; opacity: .8; }
-.pause-run { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 2px 4px; }
-.pause-left { font-size: 46px; font-weight: 300; letter-spacing: -1px; font-variant-numeric: tabular-nums; line-height: 1.1; color: var(--orange); }
-.pause-run.done .pause-left { color: var(--pos); font-weight: 600; font-size: 34px; }
-.pause-bar { height: 5px; border-radius: 3px; background: var(--field); overflow: hidden; margin: 10px 4px 2px; }
-.pause-bar > div { height: 100%; width: 0; background: var(--orange); border-radius: 3px; transition: width 1s linear; }
-#pause-note:empty { display: none; }
-#pause-note { margin: 8px 4px 0; }
-
 /* ---------- Mes heures ---------- */
 .balance { text-align: center; padding: 20px 16px 18px; }
 .balance .small { color: var(--muted); font-weight: 500; }
