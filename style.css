@@ -470,3 +470,14 @@ html.ios-gap .notes-foot { padding-bottom: 14px; }
 .tiles .tile.tile-notes svg { background: #ffcc00; }
 .notes-list { flex: 0 1 auto; }
 .notes-foot { margin-top: auto; }
+
+/* Lien rapide (Contrôle de chaîne) */
+.link-row {
+  display: flex; align-items: center; gap: 12px;
+  padding: 12px 14px; text-decoration: none; color: var(--text);
+  transition: transform .15s ease;
+}
+.link-row:active { transform: scale(0.98); }
+.lr-ico { width: 34px; height: 34px; padding: 6px; border-radius: 10px; background: #34c759; fill: none; stroke: #fff; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; flex: none; }
+.lr-t { flex: 1; font-weight: 600; font-size: 17px; letter-spacing: -0.3px; }
+.lr-go { width: 20px; height: 20px; fill: none; stroke: var(--muted); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
