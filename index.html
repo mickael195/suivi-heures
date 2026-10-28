@@ -64,6 +64,11 @@
             Pour l'installer : bouton <b>Partager</b> de Safari puis <b>Sur l'écran d'accueil</b>.
             <button type="button" class="link" id="ios-hint-close">OK</button>
           </div>
+      <button type="button" class="card today-strip" id="today-strip" data-tab="4" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.9 1.9 0 0 0 3.4 0"/></svg>
+        <span class="ts-txt"><span class="ts-k" id="today-strip-k">Aujourd'hui</span><span id="today-strip-v"></span></span>
+        <span class="ts-go">›</span>
+      </button>
       <section class="card week" id="week-card">
         <div class="row between week-head">
           <button type="button" class="icon-btn sm" id="wk-prev" aria-label="Semaine précédente">‹</button>
@@ -202,6 +207,30 @@
           <p class="muted small center">Touche une journée pour la modifier</p>
         </div>
       </section>
+
+      <!-- Infos atelier -->
+      <section class="page" data-page="4" aria-label="Infos">
+        <div class="page-in">
+          <div class="row between">
+            <h1 class="page-title">Infos</h1>
+            <button type="button" class="icon-btn add-btn" id="info-add" aria-label="Ajouter une info">+</button>
+          </div>
+          <p class="small muted page-sub">Tâches qui reviennent à l'atelier, communes à tous les comptes.</p>
+          <section class="card">
+            <h2 class="sec-t">Aujourd'hui</h2>
+            <ul class="info-list" id="info-today"></ul>
+          </section>
+          <section class="card">
+            <h2 class="sec-t">Demain</h2>
+            <ul class="info-list" id="info-tomorrow"></ul>
+          </section>
+          <section class="card">
+            <h2 class="sec-t">Toutes les infos</h2>
+            <ul class="info-list" id="info-all"></ul>
+            <p class="small muted center" id="info-empty" hidden>Ajoute ta première info avec le bouton +<br>(ex : poubelles, bacs de chiffons sales…)</p>
+          </section>
+        </div>
+      </section>
     </div>
 
     <nav class="tabbar" id="tabbar">
@@ -209,6 +238,7 @@
       <button type="button" class="tab" data-tab="1"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><span>Heures</span></button>
       <button type="button" class="tab" data-tab="2"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h1M12 12h0M15 12h1M8 16h1M15 16h1"/></svg><span>Calcul</span></button>
       <button type="button" class="tab" data-tab="3"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h9"/></svg><span>Historique</span></button>
+      <button type="button" class="tab" data-tab="4"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg><span>Infos</span></button>
     </nav>
   </main>
 
@@ -233,6 +263,35 @@
       <hr>
       <button class="btn" type="button" id="logout-btn">Se déconnecter</button>
       <p class="small muted center" id="diag"></p>
+    </form>
+  </dialog>
+
+  <!-- Info atelier -->
+  <dialog id="info-dialog">
+    <form method="dialog" class="stack">
+      <div class="row between"><h2 id="info-d-title">Nouvelle info</h2><button class="icon-btn" value="cancel" aria-label="Fermer">✕</button></div>
+      <label>Quoi ?<input id="info-titre" maxlength="80" placeholder="Sortir les poubelles"></label>
+      <div>
+        <p class="lbl">Quels jours ?</p>
+        <div class="day-chips" id="info-jours">
+          <button type="button" data-j="0">L</button><button type="button" data-j="1">M</button><button type="button" data-j="2">M</button><button type="button" data-j="3">J</button><button type="button" data-j="4">V</button><button type="button" data-j="5">S</button><button type="button" data-j="6">D</button>
+        </div>
+      </div>
+      <div>
+        <p class="lbl">À quelle fréquence ?</p>
+        <div class="seg" id="info-toutes">
+          <button type="button" class="seg-btn active" data-t="1">Toutes</button>
+          <button type="button" class="seg-btn" data-t="2">1 sur 2</button>
+          <button type="button" class="seg-btn" data-t="3">1 sur 3</button>
+          <button type="button" class="seg-btn" data-t="4">1 sur 4</button>
+        </div>
+      </div>
+      <label id="info-depuis-wrap" hidden>Une semaine où c'est fait (pour caler le rythme)<input type="date" id="info-depuis"></label>
+      <label>Heure ou précision (facultatif)<input id="info-heure" maxlength="40" placeholder="Avant 8h, le soir…"></label>
+      <label>Note (facultatif)<input id="info-note" maxlength="300" placeholder="Bacs devant le portail"></label>
+      <p id="info-msg" class="msg" role="alert"></p>
+      <button class="btn primary" type="button" id="info-save">Enregistrer</button>
+      <button class="btn danger" type="button" id="info-delete" hidden>Supprimer</button>
     </form>
   </dialog>
 

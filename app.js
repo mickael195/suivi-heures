@@ -123,6 +123,7 @@ async function loadAll() {
   state.weekRef = mondayOf(new Date());
   renderWeek();
   loadNotes();
+  loadInfos();
 }
 
 function renderBalance() {
@@ -517,7 +518,7 @@ pager.addEventListener('scroll', () => {
   cancelAnimationFrame(scrollRaf);
   scrollRaf = requestAnimationFrame(() => {
     const i = Math.round(pager.scrollLeft / Math.max(1, pager.clientWidth));
-    setActiveTab(Math.max(0, Math.min(3, i)));
+    setActiveTab(Math.max(0, Math.min(4, i)));
   });
 }, { passive: true });
 
@@ -606,7 +607,7 @@ window.addEventListener('resize', fixHeight);
 window.addEventListener('orientationchange', () => setTimeout(fixHeight, 300));
 
 // Ligne de diagnostic (en bas des réglages) pour régler l'affichage selon le téléphone
-const APP_VERSION = 'v19';
+const APP_VERSION = 'v20';
 function diag() {
   const probe = document.createElement('div');
   probe.style.cssText = 'position:fixed;visibility:hidden;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)';
@@ -858,3 +859,142 @@ $('note-delete').addEventListener('click', async () => {
 // Fermer la feuille (geste ou Échap) enregistre la note en cours
 $('notes-dialog').addEventListener('close', () => { if (!$('notes-edit-view').hidden) closeNote().then(renderNotes); });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && !$('notes-edit-view').hidden) saveNote(); });
+
+// ---------- Infos atelier (tâches qui reviennent) ----------
+const JOURS_LONGS = ['lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi', 'dimanche'];
+let infos = [];
+let infoEdit = null;
+let infoJours = new Set();
+let infoToutes = 1;
+
+function infoOn(x, d) {
+  const wd = (d.getDay() + 6) % 7;
+  if (!x.jours.includes(wd)) return false;
+  if (x.toutes <= 1) return true;
+  const weeks = Math.round((mondayOf(d) - mondayOf(parseIso(x.depuis))) / (7 * 86400000));
+  return ((weeks % x.toutes) + x.toutes) % x.toutes === 0;
+}
+function infoNext(x, from) {
+  for (let i = 0; i < 70; i++) {
+    const d = new Date(from.getFullYear(), from.getMonth(), from.getDate() + i);
+    if (infoOn(x, d)) return d;
+  }
+  return null;
+}
+function infoRythme(x) {
+  const js = [...x.jours].sort().map((k) => JOURS_LONGS[k]);
+  const liste = js.length === 7 ? 'tous les jours' : js.length > 1 ? js.slice(0, -1).join(', ') + ' et ' + js.at(-1) : js[0];
+  const freq = x.toutes > 1 ? ` · 1 semaine sur ${x.toutes}` : js.length === 7 ? '' : ' · chaque semaine';
+  return (js.length === 7 ? 'Tous les jours' : liste.charAt(0).toUpperCase() + liste.slice(1)) + freq;
+}
+function quand(d) {
+  const t = new Date(); t.setHours(0, 0, 0, 0);
+  const diff = Math.round((d - t) / 86400000);
+  if (diff === 0) return "Aujourd'hui";
+  if (diff === 1) return 'Demain';
+  const n = JOURS_LONGS[(d.getDay() + 6) % 7];
+  if (diff < 7) return n.charAt(0).toUpperCase() + n.slice(1);
+  return `${n.slice(0, 3)}. ${d.getDate()}/${d.getMonth() + 1}`;
+}
+
+async function loadInfos() {
+  const { data, error } = await sb.from('infos_atelier').select('id,titre,jours,toutes,depuis,heure,note').order('titre');
+  if (!error) infos = data || [];
+  renderInfos();
+}
+
+function infoRow(x, sub, right) {
+  const li = document.createElement('li');
+  const a = document.createElement('div');
+  const t = document.createElement('div'); t.className = 'it'; t.textContent = x.titre;
+  const s = document.createElement('div'); s.className = 'is'; s.textContent = sub;
+  a.append(t, s);
+  li.append(a);
+  if (right) { const r = document.createElement('div'); r.className = 'ir'; r.textContent = right; li.append(r); }
+  li.addEventListener('click', () => openInfo(x));
+  return li;
+}
+
+function renderInfos() {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today); tomorrow.setDate(today.getDate() + 1);
+  const detail = (x) => [x.heure, x.note].filter(Boolean).join(' · ') || infoRythme(x);
+  const fill = (id, list, empty) => {
+    const ul = $(id); ul.innerHTML = '';
+    if (!list.length) { const li = document.createElement('li'); li.className = 'none'; li.textContent = empty; ul.append(li); return; }
+    list.forEach((li) => ul.append(li));
+  };
+  const auj = infos.filter((x) => infoOn(x, today));
+  const dem = infos.filter((x) => infoOn(x, tomorrow));
+  fill('info-today', auj.map((x) => infoRow(x, detail(x))), 'Rien de prévu');
+  fill('info-tomorrow', dem.map((x) => infoRow(x, detail(x))), 'Rien de prévu');
+  const all = infos.map((x) => ({ x, n: infoNext(x, today) })).sort((p, q) => (p.n || Infinity) - (q.n || Infinity));
+  const ul = $('info-all'); ul.innerHTML = '';
+  all.forEach(({ x, n }) => ul.append(infoRow(x, infoRythme(x) + (x.heure ? ` · ${x.heure}` : ''), n ? quand(n) : '')));
+  $('info-empty').hidden = infos.length > 0;
+  // bandeau sur l'accueil
+  const strip = $('today-strip');
+  if (auj.length) { $('today-strip-k').textContent = "Aujourd'hui"; $('today-strip-v').textContent = auj.map((x) => x.titre).join(' · '); strip.hidden = false; }
+  else if (dem.length) { $('today-strip-k').textContent = 'Demain'; $('today-strip-v').textContent = dem.map((x) => x.titre).join(' · '); strip.hidden = false; }
+  else strip.hidden = true;
+}
+
+function setInfoToutes(t) {
+  infoToutes = t;
+  document.querySelectorAll('#info-toutes [data-t]').forEach((b) => b.classList.toggle('active', Number(b.dataset.t) === t));
+  $('info-depuis-wrap').hidden = t <= 1;
+}
+function renderChips() {
+  document.querySelectorAll('#info-jours [data-j]').forEach((b) => b.classList.toggle('on', infoJours.has(Number(b.dataset.j))));
+}
+document.querySelectorAll('#info-jours [data-j]').forEach((b) => b.addEventListener('click', () => {
+  const k = Number(b.dataset.j);
+  if (infoJours.has(k)) infoJours.delete(k); else infoJours.add(k);
+  renderChips();
+}));
+document.querySelectorAll('#info-toutes [data-t]').forEach((b) => b.addEventListener('click', () => setInfoToutes(Number(b.dataset.t))));
+
+function openInfo(x) {
+  infoEdit = x || null;
+  $('info-d-title').textContent = x ? 'Modifier' : 'Nouvelle info';
+  $('info-titre').value = x?.titre || '';
+  $('info-heure').value = x?.heure || '';
+  $('info-note').value = x?.note || '';
+  $('info-depuis').value = x?.depuis || isoDate(new Date());
+  infoJours = new Set(x?.jours || []);
+  renderChips();
+  setInfoToutes(x?.toutes || 1);
+  $('info-delete').hidden = !x;
+  $('info-msg').textContent = '';
+  $('info-dialog').showModal();
+}
+$('info-add').addEventListener('click', () => openInfo(null));
+
+$('info-save').addEventListener('click', async () => {
+  const titre = $('info-titre').value.trim();
+  if (!titre) { $('info-msg').textContent = 'Donne un nom (ex : poubelles)'; return; }
+  if (!infoJours.size) { $('info-msg').textContent = 'Choisis au moins un jour'; return; }
+  const row = {
+    titre,
+    jours: [...infoJours].sort(),
+    toutes: infoToutes,
+    depuis: $('info-depuis').value || isoDate(new Date()),
+    heure: $('info-heure').value.trim() || null,
+    note: $('info-note').value.trim() || null,
+  };
+  const q = infoEdit ? sb.from('infos_atelier').update(row).eq('id', infoEdit.id) : sb.from('infos_atelier').insert({ ...row, created_by: state.user.id });
+  const { error } = await q;
+  if (error) { $('info-msg').textContent = frError(error); return; }
+  $('info-dialog').close();
+  toast(infoEdit ? 'Info modifiée' : 'Info ajoutée');
+  loadInfos();
+});
+$('info-delete').addEventListener('click', async () => {
+  if (!infoEdit || !confirm(`Supprimer « ${infoEdit.titre} » pour tout le monde ?`)) return;
+  const { error } = await sb.from('infos_atelier').delete().eq('id', infoEdit.id);
+  if (error) { $('info-msg').textContent = frError(error); return; }
+  $('info-dialog').close();
+  toast('Info supprimée');
+  loadInfos();
+});
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && state.user) renderInfos(); });
