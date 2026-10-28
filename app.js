@@ -608,7 +608,7 @@ window.addEventListener('resize', fixHeight);
 window.addEventListener('orientationchange', () => setTimeout(fixHeight, 300));
 
 // Ligne de diagnostic (en bas des réglages) pour régler l'affichage selon le téléphone
-const APP_VERSION = 'v23';
+const APP_VERSION = 'v24';
 function diag() {
   const probe = document.createElement('div');
   probe.style.cssText = 'position:fixed;visibility:hidden;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)';
@@ -998,7 +998,7 @@ $('info-save').addEventListener('click', async () => {
   loadInfos();
 });
 $('info-delete').addEventListener('click', async () => {
-  if (!infoEdit || !confirm(`Supprimer « ${infoEdit.titre} » pour tout le monde ?`)) return;
+  if (!infoEdit || !confirm(`Supprimer « ${infoEdit.titre} » ?`)) return;
   const { error } = await sb.from('infos_atelier').delete().eq('id', infoEdit.id);
   if (error) { $('info-msg').textContent = frError(error); return; }
   $('info-dialog').close();

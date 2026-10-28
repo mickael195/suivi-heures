@@ -4,6 +4,7 @@ Petite app (PWA) de suivi des heures de travail : chaque jour on saisit les heur
 
 - Hébergement : GitHub Pages (site statique, aucun build)
 - Données et comptes : Supabase (chaque utilisateur ne voit que ses propres heures, protégé par RLS)
+- Tout est personnel (heures, planning, notes, infos) : chaque compte ne voit que ses données
 - Inscription uniquement avec un code d'invitation (généré dans Réglages par l'administrateur)
 - Installable sur iPhone (Safari → Partager → Sur l'écran d'accueil) et Android (bouton Installer)
 
