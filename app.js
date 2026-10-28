@@ -607,7 +607,7 @@ window.addEventListener('resize', fixHeight);
 window.addEventListener('orientationchange', () => setTimeout(fixHeight, 300));
 
 // Ligne de diagnostic (en bas des réglages) pour régler l'affichage selon le téléphone
-const APP_VERSION = 'v20';
+const APP_VERSION = 'v21';
 function diag() {
   const probe = document.createElement('div');
   probe.style.cssText = 'position:fixed;visibility:hidden;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)';
@@ -937,6 +937,13 @@ function renderInfos() {
   if (auj.length) { $('today-strip-k').textContent = "Aujourd'hui"; $('today-strip-v').textContent = auj.map((x) => x.titre).join(' · '); strip.hidden = false; }
   else if (dem.length) { $('today-strip-k').textContent = 'Demain'; $('today-strip-v').textContent = dem.map((x) => x.titre).join(' · '); strip.hidden = false; }
   else strip.hidden = true;
+  // pastille : sur l'onglet Infos et sur l'icône de l'app
+  $('infos-badge').hidden = !auj.length;
+  $('infos-badge').textContent = auj.length || '';
+  try {
+    if (auj.length && navigator.setAppBadge) navigator.setAppBadge(auj.length).catch(() => {});
+    else if (navigator.clearAppBadge) navigator.clearAppBadge().catch(() => {});
+  } catch { /* pas de pastille sur ce téléphone */ }
 }
 
 function setInfoToutes(t) {
@@ -998,3 +1005,57 @@ $('info-delete').addEventListener('click', async () => {
   loadInfos();
 });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && state.user) renderInfos(); });
+
+// ---------- Notifications (rappel du matin + pastille) ----------
+const VAPID_PUBLIC = 'BL3x2ukKJbCcuI42vvfnMCmWIv3Hhu_bRdS96yGcm2zHcHtCX8ML8CDBbccRatseSdpFmvrwV1vCp7KRolcho-8';
+function b64ToBytes(b64) {
+  const pad = '='.repeat((4 - (b64.length % 4)) % 4);
+  const raw = atob((b64 + pad).replace(/-/g, '+').replace(/_/g, '/'));
+  return Uint8Array.from(raw, (c) => c.charCodeAt(0));
+}
+function notifSupported() { return 'Notification' in window && 'serviceWorker' in navigator && 'PushManager' in window; }
+
+async function refreshNotifState() {
+  const el = $('notif-state'), btn = $('notif-enable');
+  el.className = 'small';
+  if (!notifSupported()) {
+    btn.hidden = true;
+    el.className = 'small muted';
+    el.textContent = /iphone|ipad/i.test(navigator.userAgent)
+      ? "Ouvre l'app depuis son icône sur l'écran d'accueil (pas depuis Safari) pour activer les notifications."
+      : 'Notifications non disponibles sur ce navigateur.';
+    return;
+  }
+  if (Notification.permission === 'denied') {
+    btn.hidden = true;
+    el.className = 'small msg';
+    el.textContent = 'Notifications bloquées : autorise-les dans Réglages iPhone > Notifications > Travail.';
+    return;
+  }
+  const reg = await navigator.serviceWorker.ready;
+  const sub = Notification.permission === 'granted' ? await reg.pushManager.getSubscription() : null;
+  btn.hidden = !!sub;
+  el.className = sub ? 'small msg ok' : 'small muted';
+  el.textContent = sub ? 'Notifications activées sur ce téléphone ✓' : '';
+}
+
+$('notif-enable').addEventListener('click', async () => {
+  try {
+    let perm = Notification.permission;
+    if (perm === 'default') perm = await Notification.requestPermission();
+    if (perm !== 'granted') { refreshNotifState(); return; }
+    const reg = await navigator.serviceWorker.ready;
+    let sub = await reg.pushManager.getSubscription();
+    if (!sub) sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: b64ToBytes(VAPID_PUBLIC) });
+    const k = sub.toJSON();
+    const { error } = await sb.from('push_subscriptions').insert({ user_id: state.user.id, endpoint: k.endpoint, p256dh: k.keys.p256dh, auth: k.keys.auth });
+    if (error && error.code !== '23505') throw error;
+    toast('Notifications activées');
+  } catch (e) {
+    $('notif-state').className = 'small msg';
+    $('notif-state').textContent = 'Impossible d\'activer : ' + frError(e);
+    return;
+  }
+  refreshNotifState();
+});
+$('settings-btn').addEventListener('click', () => { if ($('notif-state')) refreshNotifState(); });

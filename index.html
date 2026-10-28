@@ -238,7 +238,7 @@
       <button type="button" class="tab" data-tab="1"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg><span>Heures</span></button>
       <button type="button" class="tab" data-tab="2"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h1M12 12h0M15 12h1M8 16h1M15 16h1"/></svg><span>Calcul</span></button>
       <button type="button" class="tab" data-tab="3"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h9"/></svg><span>Historique</span></button>
-      <button type="button" class="tab" data-tab="4"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg><span>Infos</span></button>
+      <button type="button" class="tab" data-tab="4"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg><span>Infos</span><i class="tab-badge" id="infos-badge" hidden></i></button>
     </nav>
   </main>
 
@@ -260,6 +260,11 @@
         </div>
         <ul id="invites" class="invites"></ul>
       </div>
+      <hr>
+      <h3>Rappel du matin</h3>
+      <p class="small muted">À 7h, une notification et une pastille rouge sur l'icône quand il y a une info atelier ce jour-là (sauf tes jours de repos).</p>
+      <button class="btn" type="button" id="notif-enable">Activer les notifications</button>
+      <p class="small" id="notif-state"></p>
       <hr>
       <button class="btn" type="button" id="logout-btn">Se déconnecter</button>
       <p class="small muted center" id="diag"></p>

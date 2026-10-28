@@ -1,6 +1,6 @@
 // Service worker : app installable + coquille dispo hors ligne.
 // Réseau d'abord (pour toujours avoir la dernière version), cache en secours.
-const CACHE = 'travail-v20';
+const CACHE = 'travail-v21';
 const SHELL = ['./', 'index.html', 'style.css', 'app.js', 'time.js', 'manifest.webmanifest', 'icons/icon-192.png', 'planning.js'];
 
 self.addEventListener('install', (e) => {
@@ -37,18 +37,20 @@ self.addEventListener('fetch', (e) => {
   );
 });
 
-// Notification "fin de pause" envoyée par le serveur
+// Notification envoyée par le serveur (rappel du matin)
 self.addEventListener('push', (e) => {
   let d = {};
   try { d = e.data ? e.data.json() : {}; } catch { d = { body: e.data && e.data.text() }; }
-  e.waitUntil(self.registration.showNotification(d.title || 'Fin de pause', {
-    body: d.body || 'Ta pause est terminée',
-    tag: d.tag || 'pause',
+  // pastille rouge sur l'icône de l'app (nombre d'infos du jour)
+  const badge = typeof d.badge === 'number' && self.navigator.setAppBadge
+    ? self.navigator.setAppBadge(d.badge).catch(() => {}) : Promise.resolve();
+  e.waitUntil(badge.then(() => self.registration.showNotification(d.title || 'Travail', {
+    body: d.body || '',
+    tag: d.tag || 'travail',
     icon: 'icons/icon-192.png',
     badge: 'icons/icon-192.png',
-    vibrate: [300, 150, 300, 150, 300],
-    requireInteraction: true,
-  }));
+    vibrate: [200, 100, 200],
+  })));
 });
 
 self.addEventListener('notificationclick', (e) => {
