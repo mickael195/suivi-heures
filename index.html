@@ -261,6 +261,10 @@
         <ul id="invites" class="invites"></ul>
       </div>
       <hr>
+      <h3>Mon planning</h3>
+      <p class="small muted" id="plan-summary"></p>
+      <button class="btn" type="button" id="plan-open">Modifier mon planning</button>
+      <hr>
       <h3>Rappel du matin</h3>
       <p class="small muted">À 7h, une notification et une pastille rouge sur l'icône quand il y a une info atelier ce jour-là (sauf tes jours de repos).</p>
       <button class="btn" type="button" id="notif-enable">Activer les notifications</button>
@@ -268,6 +272,36 @@
       <hr>
       <button class="btn" type="button" id="logout-btn">Se déconnecter</button>
       <p class="small muted center" id="diag"></p>
+    </form>
+  </dialog>
+
+  <!-- Mon planning (au premier lancement et dans les réglages) -->
+  <dialog id="plan-dialog">
+    <form method="dialog" class="stack">
+      <div class="row between"><h2>Mon planning</h2><button class="icon-btn" value="cancel" id="plan-x" aria-label="Fermer">✕</button></div>
+      <p class="lbl">Cette semaine, tu es en :</p>
+      <div class="seg" id="plan-mode">
+        <button type="button" class="seg-btn" data-m="R1">R1</button>
+        <button type="button" class="seg-btn" data-m="R2">R2</button>
+        <button type="button" class="seg-btn" data-m="R3">R3</button>
+        <button type="button" class="seg-btn" data-m="FIXE">Hors roul.</button>
+      </div>
+      <p class="small muted" id="plan-hint">Choisis ta rotation de cette semaine : l'app enchaîne R1 → R2 → R3 toute seule.</p>
+      <div id="plan-fixe" class="stack" hidden>
+        <div>
+          <p class="lbl">Tes jours travaillés</p>
+          <div class="day-chips" id="pf-jours">
+            <button type="button" data-j="0">L</button><button type="button" data-j="1">M</button><button type="button" data-j="2">M</button><button type="button" data-j="3">J</button><button type="button" data-j="4">V</button><button type="button" data-j="5">S</button><button type="button" data-j="6">D</button>
+          </div>
+        </div>
+        <p class="lbl">Matin</p>
+        <div class="grid2"><input type="time" id="pf-a1" value="08:00"><input type="time" id="pf-a2" value="12:00"></div>
+        <p class="lbl">Après-midi</p>
+        <div class="grid2"><input type="time" id="pf-b1" value="13:00"><input type="time" id="pf-b2" value="16:30"></div>
+        <div class="day-diff"><span class="muted">Par jour</span><span class="strong" id="pf-total">—</span></div>
+      </div>
+      <p id="plan-msg" class="msg" role="alert"></p>
+      <button class="btn primary" type="button" id="plan-save">Enregistrer</button>
     </form>
   </dialog>
 

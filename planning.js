@@ -66,3 +66,30 @@ export function weekPlan(planning, monday) {
   }
   return days;
 }
+
+// Roulement de l'atelier : R1 -> R2 -> R3 -> R1…
+const A = [['07:45', '11:15'], ['12:30', '16:30']];
+const B = [['08:30', '12:00'], ['13:15', '17:15']];
+const C = [['09:00', '13:00'], ['14:15', '17:45']];
+export const ROULEMENT = {
+  R1: { nom: 'R1', jours: [A, A, A, A, [['07:45', '11:15'], ['12:30', '15:45']], null, null] },
+  R2: { nom: 'R2', jours: [B, B, B, B, [['08:30', '12:00'], ['13:15', '16:30']], null, null] },
+  R3: { nom: 'R3', jours: [null, C, C, [['09:15', '13:00'], ['14:15', '17:45']], C, [['08:00', '13:00'], ['14:00', '16:00']], null] },
+};
+export const CYCLE = ['R1', 'R2', 'R3'];
+
+// "Cette semaine je suis en R2" -> planning qui enchaîne R3, R1… les semaines suivantes
+export function planningRoulement(rotCetteSemaine, today = new Date(), exceptions = {}) {
+  const idx = CYCLE.indexOf(rotCetteSemaine);
+  const anchor = mondayOf(today);
+  anchor.setDate(anchor.getDate() - idx * 7);
+  return { anchor: isoDate(anchor), cycle: [...CYCLE], rotations: structuredClone(ROULEMENT), exceptions };
+}
+
+// Hors roulement : mêmes horaires chaque semaine sur les jours choisis
+export function planningFixe(jours, plages, today = new Date(), exceptions = {}) {
+  const semaine = [0, 1, 2, 3, 4, 5, 6].map((j) => (jours.includes(j) ? plages : null));
+  return { anchor: isoDate(mondayOf(today)), cycle: ['FIXE'], rotations: { FIXE: { nom: 'Horaires fixes', jours: semaine } }, exceptions };
+}
+
+export function rotLabel(rot) { return rot === 'FIXE' ? 'Horaires fixes' : rot; }

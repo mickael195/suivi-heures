@@ -1,6 +1,6 @@
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 import { parseDuree, fmt, fmtSigned, isoDate, parseIso, periodBounds, shiftRef, summarize } from './time.js';
-import { dayPlan, weekPlan, mondayOf, plagesTotal, cent as centMin, hhmm, toMin } from './planning.js';
+import { dayPlan, weekPlan, mondayOf, plagesTotal, cent as centMin, hhmm, toMin, planningRoulement, planningFixe, rotLabel, rotationOf } from './planning.js';
 
 const SUPABASE_URL = 'https://ogpidhrvlgkcyyaryjny.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_23qQ5heU8A9CF4me4VQ_8Q_le0fzV7H';
@@ -124,6 +124,7 @@ async function loadAll() {
   renderWeek();
   loadNotes();
   loadInfos();
+  if (!state.profile.planning) setTimeout(() => openPlan(true), 400); // premier lancement : choisir son planning
 }
 
 function renderBalance() {
@@ -607,7 +608,7 @@ window.addEventListener('resize', fixHeight);
 window.addEventListener('orientationchange', () => setTimeout(fixHeight, 300));
 
 // Ligne de diagnostic (en bas des réglages) pour régler l'affichage selon le téléphone
-const APP_VERSION = 'v22';
+const APP_VERSION = 'v23';
 function diag() {
   const probe = document.createElement('div');
   probe.style.cssText = 'position:fixed;visibility:hidden;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)';
@@ -642,7 +643,7 @@ function renderWeek() {
   $('wk-empty').hidden = true;
   const days = weekPlan(planning, state.weekRef);
   const total = days.reduce((t, d) => t + d.total, 0);
-  $('wk-sub').textContent = `${days[0].rot} · ${days[0].nom} · ${centMin(total)}`;
+  $('wk-sub').textContent = `${rotLabel(days[0].rot)} · ${centMin(total)}`;
   days.forEach((d, i) => {
     if (i === 6 && !d.plages) return; // dimanche affiché seulement s'il est travaillé
     const li = document.createElement('li');
@@ -705,7 +706,7 @@ function ddTotal() {
 function openDay(d) {
   ddDay = d;
   const name = ['dimanche', 'lundi', 'mardi', 'mercredi', 'jeudi', 'vendredi', 'samedi'][d.date.getDay()];
-  $('dd-title').textContent = `${name.charAt(0).toUpperCase() + name.slice(1)} ${d.date.getDate()}/${d.date.getMonth() + 1} · ${d.rot}`;
+  $('dd-title').textContent = `${name.charAt(0).toUpperCase() + name.slice(1)} ${d.date.getDate()}/${d.date.getMonth() + 1} · ${rotLabel(d.rot)}`;
   const src = d.plages || d.normal || state.profile.planning.rotations?.[d.rot]?.jours?.find((x) => x) || [];
   $('dd-a1').value = src[0]?.[0] || '';
   $('dd-a2').value = src[0]?.[1] || '';
@@ -1059,3 +1060,94 @@ $('notif-enable').addEventListener('click', async () => {
   refreshNotifState();
 });
 $('settings-btn').addEventListener('click', () => { if ($('notif-state')) refreshNotifState(); });
+
+// ---------- Mon planning : R1/R2/R3 ou horaires fixes ----------
+let planMode = null;
+let pfJours = new Set([0, 1, 2, 3, 4]);
+
+function planSummary() {
+  const p = state.profile?.planning;
+  if (!p) return 'Pas encore choisi';
+  const r = rotationOf(p, new Date());
+  if (r === 'FIXE') {
+    const w = p.rotations.FIXE.jours.find((x) => x);
+    return w ? `Horaires fixes · ${w.map(([a, b]) => `${hhmm(toMin(a))}–${hhmm(toMin(b))}`).join(' · ')}` : 'Horaires fixes';
+  }
+  return `Roulement · cette semaine ${r}`;
+}
+
+function setPlanMode(m) {
+  planMode = m;
+  document.querySelectorAll('#plan-mode [data-m]').forEach((b) => b.classList.toggle('active', b.dataset.m === m));
+  $('plan-fixe').hidden = m !== 'FIXE';
+  $('plan-hint').textContent = m === 'FIXE'
+    ? 'Tes horaires se répètent chaque semaine sur les jours choisis.'
+    : m ? `Semaine prochaine : ${['R1', 'R2', 'R3'][(['R1', 'R2', 'R3'].indexOf(m) + 1) % 3]}, puis ${['R1', 'R2', 'R3'][(['R1', 'R2', 'R3'].indexOf(m) + 2) % 3]}… l'app enchaîne toute seule.`
+      : "Choisis ta rotation de cette semaine : l'app enchaîne R1 → R2 → R3 toute seule.";
+  pfTotal();
+}
+document.querySelectorAll('#plan-mode [data-m]').forEach((b) => b.addEventListener('click', () => setPlanMode(b.dataset.m)));
+function pfChips() { document.querySelectorAll('#pf-jours [data-j]').forEach((b) => b.classList.toggle('on', pfJours.has(Number(b.dataset.j)))); }
+document.querySelectorAll('#pf-jours [data-j]').forEach((b) => b.addEventListener('click', () => {
+  const k = Number(b.dataset.j);
+  if (pfJours.has(k)) pfJours.delete(k); else pfJours.add(k);
+  pfChips();
+}));
+function pfPlages() {
+  const v = ['pf-a1', 'pf-a2', 'pf-b1', 'pf-b2'].map((id) => $(id).value);
+  const out = [];
+  if (v[0] && v[1]) out.push([v[0], v[1]]);
+  if (v[2] && v[3]) out.push([v[2], v[3]]);
+  return out;
+}
+function pfTotal() {
+  const t = plagesTotal(pfPlages());
+  $('pf-total').textContent = t ? `${centMin(t)} = ${hhmm(t)}` : '—';
+}
+['pf-a1', 'pf-a2', 'pf-b1', 'pf-b2'].forEach((id) => $(id).addEventListener('input', pfTotal));
+
+function openPlan(first = false) {
+  const p = state.profile?.planning;
+  const r = p ? rotationOf(p, new Date()) : null;
+  if (r === 'FIXE') {
+    const js = p.rotations.FIXE.jours;
+    pfJours = new Set(js.map((x, i) => (x ? i : -1)).filter((i) => i >= 0));
+    const w = js.find((x) => x) || [];
+    $('pf-a1').value = w[0]?.[0] || ''; $('pf-a2').value = w[0]?.[1] || '';
+    $('pf-b1').value = w[1]?.[0] || ''; $('pf-b2').value = w[1]?.[1] || '';
+  }
+  pfChips();
+  setPlanMode(r && ['R1', 'R2', 'R3', 'FIXE'].includes(r) ? r : null);
+  $('plan-msg').textContent = first ? 'Bienvenue ! Choisis ton planning pour voir tes horaires de la semaine.' : '';
+  $('plan-msg').className = first ? 'msg ok' : 'msg';
+  $('plan-x').hidden = first;
+  $('plan-dialog').showModal();
+}
+$('plan-open').addEventListener('click', () => { $('settings').close(); openPlan(false); });
+
+$('plan-save').addEventListener('click', async () => {
+  const msg = $('plan-msg');
+  msg.className = 'msg';
+  if (!planMode) { msg.textContent = 'Choisis R1, R2, R3 ou Hors roulement'; return; }
+  const ex = state.profile.planning?.exceptions || {};
+  let planning;
+  if (planMode === 'FIXE') {
+    const pl = pfPlages();
+    if (!pfJours.size) { msg.textContent = 'Choisis au moins un jour'; return; }
+    if (!pl.length || pl.some(([a, b]) => toMin(b) <= toMin(a))) { msg.textContent = 'Vérifie les horaires (début avant fin)'; return; }
+    planning = planningFixe([...pfJours], pl, new Date(), ex);
+  } else {
+    planning = planningRoulement(planMode, new Date(), ex);
+  }
+  const { error } = await sb.from('profiles').update({ planning }).eq('id', state.user.id);
+  if (error) { msg.textContent = frError(error); return; }
+  state.profile.planning = planning;
+  $('plan-dialog').close();
+  state.weekRef = mondayOf(new Date());
+  renderWeek();
+  toast('Planning enregistré');
+});
+// le résumé dans les réglages
+$('settings-btn').addEventListener('click', () => { $('plan-summary').textContent = planSummary(); });
+// au premier lancement on ne peut pas fermer sans choisir
+$('plan-dialog').addEventListener('cancel', (e) => { if ($('plan-x').hidden) e.preventDefault(); });
